@@ -6,6 +6,7 @@ const sendEmail = require("../utils/email");
 const otpGenerator = require("otp-generator");
 const crypto = require("crypto");
 const jwt = require("jsonwebtoken");
+const nodemailer = require("nodemailer")
 
 
 // Generate Account Number (example logic)
@@ -167,14 +168,14 @@ router.post("/forgot-password", async (req, res) => {
     const transporter = nodemailer.createTransport({
       service: 'gmail',
       auth: {
-        user: process.env.EMAIL,  // Your email
-        pass: process.env.EMAIL_PASSWORD,  // Your email password
+        user: process.env.EMAIL_USER,  // Your email
+        pass: process.env.EMAIL_PASS,  // Your email password
       },
     });
 
     const mailOptions = {
       to: user.email,
-      from: process.env.EMAIL,
+      from: process.env.EMAIL_USER,
       subject: "Password Reset Request",
       text: `You are receiving this because you (or someone else) have requested the reset of your account password.\n\n
       Please click on the following link, or paste this into your browser to complete the process:\n\n
@@ -184,12 +185,14 @@ router.post("/forgot-password", async (req, res) => {
 
     await transporter.sendMail(mailOptions);
 
-    res.status(200).json({ message: "Password reset email sent successfully" });
+    // Respond with token for testing or frontend handling
+    res.status(200).json({ message: "Password reset email sent successfully", token: resetToken });
   } catch (error) {
     console.error(error);
     res.status(500).json({ message: "Server error" });
   }
 });
+
 
 // Reset Password
 router.post("/reset-password/:token", async (req, res) => {

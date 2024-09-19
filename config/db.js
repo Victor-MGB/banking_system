@@ -1,3 +1,4 @@
+// connectDB.js
 const mongoose = require('mongoose');
 
 const connectDB = async () => {
@@ -10,6 +11,7 @@ const connectDB = async () => {
     await mongoose.connect(uri, {
       useNewUrlParser: true,
       useUnifiedTopology: true,
+      family: 4,  // Force IPv4 (this can help in some network configurations)
     });
     console.log('MongoDB connected successfully');
   } catch (error) {

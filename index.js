@@ -1,15 +1,14 @@
-// index.js
+// index.js (or server.js)
 
-// Load environment variables from .env
-require("dotenv").config();
+require('dotenv').config(); // Load environment variables from .env
 
-const express = require("express");
-const mongoose = require("mongoose");
-const cors = require("cors");
-const bodyParser = require("body-parser");
+const express = require('express');
+const cors = require('cors');
+const bodyParser = require('body-parser');
 
 // Import routes
-const userRoutes = require("./routes/userRoutes"); // Assuming you have a user.js for registration, login, etc.
+const userRoutes = require('./routes/userRoutes'); // Assuming you have a userRoutes file
+const connectDB = require('./config/db'); // Import the MongoDB connection
 
 // Initialize express app
 const app = express();
@@ -19,11 +18,8 @@ app.use(cors()); // To allow cross-origin requests
 app.use(bodyParser.json()); // To parse JSON request bodies
 app.use(bodyParser.urlencoded({ extended: true }));
 
-// MongoDB Connection
-mongoose.connect(process.env.MONGO_URI, {
-})
-  .then(() => console.log("MongoDB connected"))
-  .catch((err) => console.error("MongoDB connection error:", err));
+// Connect to MongoDB
+connectDB(); // Call the MongoDB connection function
 
 // Health check route
 app.get("/", (req, res) => {
