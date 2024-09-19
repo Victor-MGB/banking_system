@@ -70,7 +70,7 @@ router.post("/register", cors(), async (req, res) => {
   }
 });
 
-router.post("/verify-otp", cors(), async (req, res) => {
+router.post("/verify-otp", async (req, res) => {
   const { email, otp } = req.body;
 
   try {
@@ -127,7 +127,6 @@ router.post("/verify-otp", cors(), async (req, res) => {
     res.status(500).json({ message: "Server error" });
   }
 });
-
 
 router.post("/login", cors(), async (req, res) => {
   const { accountNumber, password } = req.body;
