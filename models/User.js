@@ -130,8 +130,8 @@ const userSchema = new Schema({
     },
   ],
   dateOfAccountCreation: { type: Date, default: Date.now },
-  passwordResetToken: String,
-  passwordResetExpires: Date,
+  resetPasswordToken: { type: String }, // Token for password reset
+  resetPasswordExpires: { type: Date }, // Expiry date for the token
   otp: { type: String },
   otpExpires: { type: Date },
 });
