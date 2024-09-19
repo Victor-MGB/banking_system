@@ -6,6 +6,7 @@ const sendEmail = require("../utils/email");
 const otpGenerator = require("otp-generator");
 const crypto = require("crypto");
 const jwt = require("jsonwebtoken");
+const cors = require("cors");
 const nodemailer = require("nodemailer")
 
 
@@ -17,7 +18,7 @@ const generateAccountNumber = () => {
 };
 
 
-router.post("/register", async (req, res) => {
+router.post("/register", cors(), async (req, res) => {
   const { fullName, email, password } = req.body; // Ensure fullName is extracted from the request
 
   try {
