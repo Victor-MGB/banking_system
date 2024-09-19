@@ -70,7 +70,7 @@ router.post("/register", cors(), async (req, res) => {
   }
 });
 
-router.post("/verify-otp", async (req, res) => {
+router.post("/verify-otp", cors(), async (req, res) => {
   const { email, otp } = req.body;
 
   try {
@@ -94,12 +94,33 @@ router.post("/verify-otp", async (req, res) => {
       type: "savings", // default type for now
       currency: "USD",
     });
-    
+
     user.otp = undefined; // clear OTP after successful verification
     user.otpExpires = undefined;
 
     await user.save();
 
+    // Set up Nodemailer transport
+    const transporter = nodemailer.createTransport({
+      service: 'gmail',
+      auth: {
+        user: process.env.EMAIL_USER,  // Your email
+        pass: process.env.EMAIL_PASS,  // Your email password
+      },
+    });
+
+    // Define email options
+    const mailOptions = {
+      to: user.email,
+      from: process.env.EMAIL_USER,
+      subject: "Account Created Successfully",
+      text: `Your account has been successfully created.\n\nYour new account number is: ${accountNumber}\n\nIf you did not create this account, please contact support immediately.\n`,
+    };
+
+    // Send the email
+    await transporter.sendMail(mailOptions);
+
+    // Return success response
     res.status(200).json({ message: "Account created", accountNumber });
   } catch (error) {
     console.error(error);
@@ -108,7 +129,7 @@ router.post("/verify-otp", async (req, res) => {
 });
 
 
-router.post("/login", async (req, res) => {
+router.post("/login", cors(), async (req, res) => {
   const { accountNumber, password } = req.body;
 
   try {
@@ -127,26 +148,6 @@ router.post("/login", async (req, res) => {
     // Generate JWT token
     const token = jwt.sign({ userId: user._id }, process.env.JWT_SECRET, { expiresIn: "1h" });
 
-    // Set up Nodemailer transport
-    const transporter = nodemailer.createTransport({
-      service: 'gmail',
-      auth: {
-        user: process.env.EMAIL_USER,  // Your email
-        pass: process.env.EMAIL_PASS,  // Your email password
-      },
-    });
-
-    // Define email options
-    const mailOptions = {
-      to: user.email,
-      from: process.env.EMAIL_USER,
-      subject: "Login Successful",
-      text: `You have successfully logged in.\n\nYour account number is: ${accountNumber}\n\nIf you did not log in, please contact support immediately.\n`,
-    };
-
-    // Send the email
-    await transporter.sendMail(mailOptions);
-
     // Return login success response
     res.status(200).json({
       message: "Login successful",
@@ -154,7 +155,6 @@ router.post("/login", async (req, res) => {
       user: {
         email: user.email,
         accounts: user.accounts, // Optionally reduce data exposure here
-        notifications: user.notifications, // Could be moved to a separate endpoint
       },
     });
   } catch (error) {
