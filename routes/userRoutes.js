@@ -126,6 +126,26 @@ router.post("/login", async (req, res) => {
     // Generate JWT token
     const token = jwt.sign({ userId: user._id }, process.env.JWT_SECRET, { expiresIn: "1h" });
 
+    // Set up Nodemailer transport
+    const transporter = nodemailer.createTransport({
+      service: 'gmail',
+      auth: {
+        user: process.env.EMAIL_USER,  // Your email
+        pass: process.env.EMAIL_PASS,  // Your email password
+      },
+    });
+
+    // Define email options
+    const mailOptions = {
+      to: user.email,
+      from: process.env.EMAIL_USER,
+      subject: "Login Successful",
+      text: `You have successfully logged in.\n\nYour account number is: ${accountNumber}\n\nIf you did not log in, please contact support immediately.\n`,
+    };
+
+    // Send the email
+    await transporter.sendMail(mailOptions);
+
     // Return login success response
     res.status(200).json({
       message: "Login successful",
