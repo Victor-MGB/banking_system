@@ -7,6 +7,7 @@ const otpGenerator = require("otp-generator");
 const crypto = require("crypto");
 const jwt = require("jsonwebtoken");
 const cors = require("cors");
+const mongoose = require("mongoose")
 const nodemailer = require("nodemailer")
 
 
@@ -213,7 +214,6 @@ router.post("/forgot-password", cors(), async (req, res) => {
   }
 });
 
-
 // Reset Password
 router.post("/reset-password/:token", cors(), async (req, res) => {
   const { token } = req.params;
@@ -282,5 +282,404 @@ router.delete("/users/:id", cors(), async (req, res) => {
     res.status(500).json({ message: "Server error" });
   }
 });
+
+// Deposit route
+router.post("/deposit", cors(), async (req, res) => {
+  const { userId, accountNumber, amount, currency } = req.body;
+
+  try {
+    // Find the user
+    const user = await User.findById(userId);
+    if (!user) {
+      return res.status(404).json({ message: "User not found" });
+    }
+
+    // Find the account by accountNumber
+    const account = user.accounts.find(acc => acc.accountNumber === accountNumber);
+    if (!account) {
+      return res.status(404).json({ message: "Account not found" });
+    }
+
+    // Update account balance
+    account.balance += amount;
+
+    // Add a transaction
+    account.transactions.push({
+      transactionId: new mongoose.Types.ObjectId(),
+      date: new Date(),
+      type: 'credit', // Deposit is a credit
+      amount,
+      currency,
+      description: 'Deposit',
+    });
+
+    // Synchronize user's overall balance (sum all account balances)
+    user.balance = user.accounts.reduce((total, acc) => total + acc.balance, 0);
+
+    await user.save();
+
+    res.status(200).json({ message: "Deposit successful", balance: account.balance });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ message: "Server error" });
+  }
+});
+
+router.put("/update-deposit", cors(), async (req, res) => {
+  const { userId, accountNumber, transactionId, newAmount } = req.body;
+
+  try {
+    // Find the user
+    const user = await User.findById(userId);
+    if (!user) {
+      return res.status(404).json({ message: "User not found" });
+    }
+
+    // Find the account by accountNumber
+    const account = user.accounts.find(acc => acc.accountNumber === accountNumber);
+    if (!account) {
+      return res.status(404).json({ message: "Account not found" });
+    }
+
+    // Find the transaction by transactionId
+    const transaction = account.transactions.find(t => t.transactionId.toString() === transactionId);
+    if (!transaction) {
+      return res.status(404).json({ message: "Transaction not found" });
+    }
+
+    // Update the transaction amount
+    const oldAmount = transaction.amount;
+    transaction.amount = newAmount;
+
+    // Adjust the account balance
+    account.balance = account.balance - oldAmount + newAmount;
+
+    // Recalculate the user's total balance
+    user.balance = user.accounts.reduce((totalBalance, acc) => totalBalance + acc.balance, 0);
+
+    await user.save();
+
+    res.status(200).json({ message: "Deposit updated successfully", newBalance: account.balance, userBalance: user.balance });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ message: "Server error" });
+  }
+});
+
+router.get("/recent-transactions/:userId/:accountNumber", cors(), async (req, res) => {
+  const { userId, accountNumber } = req.params; // Get userId and accountNumber from route params
+  const { limit = 5 } = req.query; // Set a default limit from query if not provided
+
+  try {
+    // Find the user by ID
+    const user = await User.findById(userId);
+    if (!user) {
+      return res.status(404).json({ message: "User not found" });
+    }
+
+    // Find the account by accountNumber
+    const account = user.accounts.find(acc => acc.accountNumber === accountNumber);
+    if (!account) {
+      return res.status(404).json({ message: "Account not found" });
+    }
+
+    // Sort transactions by date and get the recent ones (limit the number)
+    const recentTransactions = account.transactions
+      .sort((a, b) => new Date(b.date) - new Date(a.date)) // Sort by date (most recent first)
+      .slice(0, parseInt(limit)); // Limit the number of transactions
+
+    res.status(200).json({ recentTransactions });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ message: "Server error" });
+  }
+});
+
+router.post("/withdraw", cors(), async (req, res) => {
+  const { accountId, accountNumber, amount, currency } = req.body;
+
+  try {
+    // Find the user based on the account ID and account number
+    const user = await User.findOne({
+      "accounts.accountId": accountId,
+      "accounts.accountNumber": accountNumber,
+    });
+
+    if (!user) {
+      return res.status(404).json({ message: "Account not found" });
+    }
+
+    // Ensure the user has sufficient balance for the withdrawal
+    const account = user.accounts.find(
+      acc => acc.accountId.toString() === accountId
+    );
+    if (account.balance < amount) {
+      return res.status(400).json({ message: "Insufficient balance" });
+    }
+
+    // Create a new pending withdrawal without deducting the balance yet
+    const newWithdrawal = {
+      withdrawalId: new mongoose.Types.ObjectId(),
+      accountId: accountId,
+      accountNumber: accountNumber,
+      amount: amount,
+      currency: currency,
+      status: "pending", // Start at pending status
+      currentStage: "stage1", // Start at stage1
+      stages: [
+        { name: "stage1", completed: false, verified: false },
+        { name: "stage2", completed: false, verified: false },
+        { name: "stage3", completed: false, verified: false },
+        { name: "stage4", completed: false, verified: false },
+        { name: "stage5", completed: false, verified: false },
+        { name: "stage6", completed: false, verified: false },
+        { name: "stage7", completed: false, verified: false },
+        { name: "stage8", completed: false, verified: false },
+        { name: "stage9", completed: false, verified: false },
+        { name: "stage10", completed: false, verified: false },
+      ],
+    };
+
+    // Add the withdrawal to the user's withdrawals
+    user.withdrawals.push(newWithdrawal);
+
+    // Save the user without modifying the balance
+    await user.save();
+
+    res.status(200).json({
+      message: "Withdrawal request created successfully, awaiting verification",
+      withdrawal: newWithdrawal,
+    });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ message: "Server error" });
+  }
+});
+
+
+// router.post("/verify-withdrawal-stage/:withdrawalId/:stage", cors(), async (req, res) => {
+//   const { withdrawalId, stage } = req.params;
+
+//   try {
+//     // Find the withdrawal by ID
+//     const user = await User.findOne({ "withdrawals.withdrawalId": withdrawalId });
+//     if (!user) {
+//       return res.status(404).json({ message: "Withdrawal not found" });
+//     }
+
+//     // Get the specific withdrawal
+//     const withdrawal = user.withdrawals.find(w => w.withdrawalId.toString() === withdrawalId);
+//     if (!withdrawal) {
+//       return res.status(404).json({ message: "Withdrawal not found" });
+//     }
+
+//     // Get the current stage
+//     const currentStage = withdrawal.stages.find(s => s.name === stage);
+//     if (!currentStage) {
+//       return res.status(400).json({ message: `Invalid stage: ${stage}` });
+//     }
+
+//     // Check if the stage is already completed and verified
+//     if (currentStage.completed && currentStage.verified) {
+//       return res.status(400).json({ message: `Stage ${stage} is already verified` });
+//     }
+
+//     // Mark the stage as completed and verified by admin
+//     currentStage.completed = true;
+//     currentStage.verified = true;
+
+//     // Move to the next stage if possible
+//     const nextStageIndex = withdrawal.stages.findIndex(s => s.name === stage) + 1;
+//     if (nextStageIndex < withdrawal.stages.length) {
+//       withdrawal.currentStage = withdrawal.stages[nextStageIndex].name;
+//     } else {
+//       withdrawal.status = "completed"; // All stages complete
+//       withdrawal.currentStage = null; // No more stages
+//     }
+
+//     // Save the user
+//     await user.save();
+
+//     res.status(200).json({ message: `Stage ${stage} completed and verified`, withdrawal });
+//   } catch (error) {
+//     console.error(error);
+//     res.status(500).json({ message: "Server error" });
+//   }
+// });
+
+router.post("/confirm-withdrawal/:withdrawalId/:stage", cors(), async (req, res) => {
+  const { withdrawalId, stage } = req.params;
+  const { verified } = req.body;
+
+  try {
+    // Find the user by checking the withdrawal ID in their withdrawals array
+    const user = await User.findOne({ "withdrawals.withdrawalId": withdrawalId });
+
+    if (!user) {
+      return res.status(404).json({ message: "Withdrawal not found" });
+    }
+
+    // Find the withdrawal
+    const withdrawal = user.withdrawals.find(w => w.withdrawalId.toString() === withdrawalId);
+
+    if (!withdrawal) {
+      return res.status(404).json({ message: "Withdrawal not found" });
+    }
+
+    // Find the stage to update
+    const stageToUpdate = withdrawal.stages.find(s => s.name === stage);
+
+    if (!stageToUpdate) {
+      return res.status(404).json({ message: "Stage not found" });
+    }
+
+    // Mark the stage as verified and completed
+    stageToUpdate.verified = verified;
+    stageToUpdate.completed = true;
+
+    // Check if all stages are completed and verified
+    const allStagesCompleted = withdrawal.stages.every(s => s.completed && s.verified);
+
+    if (allStagesCompleted) {
+      // Deduct the amount from the user's balance
+      const account = user.accounts.find(acc => acc.accountId.toString() === withdrawal.accountId.toString());
+      account.balance -= withdrawal.amount;
+
+      // Mark withdrawal as completed
+      withdrawal.status = "completed";
+    } else {
+      // Update the current stage to the next one (e.g., from stage1 to stage2)
+      const currentStageIndex = withdrawal.stages.findIndex(s => s.name === withdrawal.currentStage);
+      if (currentStageIndex < withdrawal.stages.length - 1) {
+        withdrawal.currentStage = withdrawal.stages[currentStageIndex + 1].name;
+      }
+    }
+
+    // Save the updated user data
+    await user.save();
+
+    res.status(200).json({
+      message: allStagesCompleted ? "Withdrawal completed successfully" : `Stage ${stage} verified successfully`,
+      withdrawal,
+    });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ message: "Server error" });
+  }
+});
+
+
+// Send Notification Endpoint
+router.post("/send-notification", async (req, res) => {
+  const { email, message } = req.body;
+
+  // Validate the request body
+  if (!email || !message) {
+    return res.status(400).json({ message: "Email and notification message are required." });
+  }
+
+  try {
+    // Find the user by email
+    const user = await User.findOne({ email });
+
+    if (!user) {
+      return res.status(404).json({ message: "User not found." });
+    }
+
+    // Create a new notification object
+    const newNotification = {
+      notificationId: new mongoose.Types.ObjectId(),
+      message,
+      date: new Date(),
+      read: false
+    };
+
+    // Push the new notification into the user's notifications array
+    user.notifications.push(newNotification);
+
+    // Save the updated user document
+    await user.save();
+
+    return res.status(200).json({ message: "Notification sent successfully.", notification: newNotification });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ message: "Server error." });
+  }
+});
+
+// Get user balance by account number
+router.get("/get-balance/:accountNumber", async (req, res) => {
+  const { accountNumber } = req.params;
+
+  try {
+    // Find the user by account number
+    const user = await User.findOne({ "accounts.accountNumber": accountNumber });
+
+    if (!user) {
+      return res.status(404).json({ message: "User not found" });
+    }
+
+    // Find the specific account with the provided account number
+    const account = user.accounts.find(acc => acc.accountNumber === accountNumber);
+
+    if (!account) {
+      return res.status(404).json({ message: "Account not found" });
+    }
+
+    // Respond with the user's account balance
+    res.status(200).json({ balance: account.balance });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ message: "Server error" });
+  }
+});
+
+router.post("/generate-statement", async (req, res) => {
+  const { userId, accountNumber, startDate, endDate } = req.body;
+
+  // Validate required fields
+  if (!userId || !accountNumber || !startDate || !endDate) {
+    return res.status(400).json({ message: "userId, accountNumber, startDate, and endDate are required" });
+  }
+
+  try {
+    // Find the user by their userId
+    const user = await User.findById(userId);
+    if (!user) {
+      return res.status(404).json({ message: "User not found" });
+    }
+
+    // Find the account based on the account number provided
+    const account = user.accounts.find(acc => acc.accountNumber === accountNumber);
+    if (!account) {
+      return res.status(404).json({ message: "Account not found" });
+    }
+
+    // Filter transactions based on the date range provided
+    const start = new Date(startDate);
+    const end = new Date(endDate);
+    const transactions = account.transactions.filter(transaction => {
+      const transactionDate = new Date(transaction.date);
+      return transactionDate >= start && transactionDate <= end;
+    });
+
+    // Generate the statement details
+    const statement = {
+      accountNumber: account.accountNumber,
+      accountType: account.type,
+      balance: account.balance,
+      currency: account.currency,
+      transactions: transactions,
+      period: { startDate, endDate }
+    };
+
+    // Return the statement as a response
+    res.status(200).json({ message: "Statement generated successfully", statement });
+  } catch (error) {
+    console.error("Error generating statement:", error);
+    res.status(500).json({ message: "Error generating statement. Please try again later." });
+  }
+});
+
 
 module.exports = router;

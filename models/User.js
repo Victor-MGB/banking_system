@@ -22,6 +22,7 @@ const accountSchema = new Schema({
 });
 
 // Withdrawal Schema
+// Withdrawal Schema
 const withdrawalSchema = new Schema({
   withdrawalId: {
     type: mongoose.Types.ObjectId,
@@ -58,11 +59,13 @@ const withdrawalSchema = new Schema({
         required: true,
       },
       completed: { type: Boolean, default: false },
+      verified: { type: Boolean, default: false },  // New field for admin verification
     },
   ],
   currentStage: { type: String, default: "stage1" },
   description: { type: String },
 });
+
 
 // Loan Schema
 const loanSchema = new Schema({
@@ -112,7 +115,6 @@ const userSchema = new Schema({
   password: { type: String, required: true },
   agree: { type: Boolean, default: true, required: true },
   kycStatus: { type: String, default: "pending" },
-  balance: { type: Number, default: 0 },
   accounts: [accountSchema],
   withdrawals: [withdrawalSchema],
   loans: [loanSchema],
