@@ -162,7 +162,7 @@ router.post("/login", cors(), async (req, res) => {
   }
 });
 
-router.post("/forgot-password", async (req, res) => {
+router.post("/forgot-password", cors(), async (req, res) => {
   const { email } = req.body;
 
   try {
@@ -215,7 +215,7 @@ router.post("/forgot-password", async (req, res) => {
 
 
 // Reset Password
-router.post("/reset-password/:token", async (req, res) => {
+router.post("/reset-password/:token", cors(), async (req, res) => {
   const { token } = req.params;
   const { password } = req.body;
 
@@ -248,7 +248,7 @@ router.post("/reset-password/:token", async (req, res) => {
 });
 
 // Get all users
-router.get("/users", async (req, res) => {
+router.get("/users", cors(), async (req, res) => {
   try {
     const users = await User.find(); // Fetch all users
     res.status(200).json(users); // Return users as JSON
@@ -259,14 +259,14 @@ router.get("/users", async (req, res) => {
 });
 
 // Logout user (client-side should discard token)
-router.post("/logout", (req, res) => {
+router.post("/logout", cors(), (req, res) => {
   // On the client side, remove the token (this endpoint doesn't need much logic on the server side)
   res.status(200).json({ message: "Logout successful" });
 });
 
 
 // Delete user by ID
-router.delete("/users/:id", async (req, res) => {
+router.delete("/users/:id", cors(), async (req, res) => {
   const { id } = req.params;
 
   try {
@@ -282,6 +282,5 @@ router.delete("/users/:id", async (req, res) => {
     res.status(500).json({ message: "Server error" });
   }
 });
-
 
 module.exports = router;
