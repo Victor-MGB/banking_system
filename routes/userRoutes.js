@@ -657,16 +657,16 @@ router.get("/get-balance/:accountNumber", async (req, res) => {
 });
 
 router.post("/generate-statement", async (req, res) => {
-  const { userId, accountNumber, startDate, endDate } = req.body;
+  const { accountNumber, startDate, endDate } = req.body;
 
   // Validate required fields
-  if (!userId || !accountNumber || !startDate || !endDate) {
-    return res.status(400).json({ message: "userId, accountNumber, startDate, and endDate are required" });
+  if (!accountNumber || !startDate || !endDate) {
+    return res.status(400).json({ message: "accountNumber, startDate, and endDate are required" });
   }
 
   try {
-    // Find the user by their userId
-    const user = await User.findById(userId);
+    // Find the user by account number
+    const user = await User.findOne({ "accounts.accountNumber": accountNumber });
     if (!user) {
       return res.status(404).json({ message: "User not found" });
     }
@@ -702,6 +702,5 @@ router.post("/generate-statement", async (req, res) => {
     res.status(500).json({ message: "Error generating statement. Please try again later." });
   }
 });
-
 
 module.exports = router;
