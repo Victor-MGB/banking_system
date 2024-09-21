@@ -607,6 +607,28 @@ router.post("/send-notification", async (req, res) => {
   }
 });
 
+// Fetch Notifications Endpoint
+router.get("/notifications", cors(), async (req, res) => {
+  const { email } = req.query; // Assuming user identifies by email
+
+  try {
+    // Find the user by email
+    const user = await User.findOne({ email });
+
+    if (!user) {
+      return res.status(404).json({ message: "User not found" });
+    }
+
+    // Return the user's notifications
+    res.status(200).json({ notifications: user.notifications });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ message: "Server error" });
+  }
+});
+
+
+
 // Get user balance by account number
 router.get("/get-balance/:accountNumber", async (req, res) => {
   const { accountNumber } = req.params;
