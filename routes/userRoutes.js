@@ -395,24 +395,21 @@ router.get("/recent-transactions/:userId/:accountNumber", cors(), async (req, re
   }
 });
 
+// POST /withdraw - Initiates a withdrawal
 router.post("/withdraw", cors(), async (req, res) => {
-  const { accountId, accountNumber, amount, currency } = req.body;
+  const { accountNumber, amount, currency } = req.body;
 
   try {
-    // Find the user based on the account ID and account number
-    const user = await User.findOne({
-      "accounts.accountId": accountId,
-      "accounts.accountNumber": accountNumber,
-    });
+    // Find the user based on the account number
+    const user = await User.findOne({ "accounts.accountNumber": accountNumber });
 
     if (!user) {
       return res.status(404).json({ message: "Account not found" });
     }
 
-    // Ensure the user has sufficient balance for the withdrawal
-    const account = user.accounts.find(
-      acc => acc.accountId.toString() === accountId
-    );
+    // Find the user's account by accountNumber
+    const account = user.accounts.find(acc => acc.accountNumber === accountNumber);
+
     if (account.balance < amount) {
       return res.status(400).json({ message: "Insufficient balance" });
     }
@@ -420,7 +417,6 @@ router.post("/withdraw", cors(), async (req, res) => {
     // Create a new pending withdrawal without deducting the balance yet
     const newWithdrawal = {
       withdrawalId: new mongoose.Types.ObjectId(),
-      accountId: accountId,
       accountNumber: accountNumber,
       amount: amount,
       currency: currency,
@@ -456,57 +452,7 @@ router.post("/withdraw", cors(), async (req, res) => {
   }
 });
 
-
-// router.post("/verify-withdrawal-stage/:withdrawalId/:stage", cors(), async (req, res) => {
-//   const { withdrawalId, stage } = req.params;
-
-//   try {
-//     // Find the withdrawal by ID
-//     const user = await User.findOne({ "withdrawals.withdrawalId": withdrawalId });
-//     if (!user) {
-//       return res.status(404).json({ message: "Withdrawal not found" });
-//     }
-
-//     // Get the specific withdrawal
-//     const withdrawal = user.withdrawals.find(w => w.withdrawalId.toString() === withdrawalId);
-//     if (!withdrawal) {
-//       return res.status(404).json({ message: "Withdrawal not found" });
-//     }
-
-//     // Get the current stage
-//     const currentStage = withdrawal.stages.find(s => s.name === stage);
-//     if (!currentStage) {
-//       return res.status(400).json({ message: `Invalid stage: ${stage}` });
-//     }
-
-//     // Check if the stage is already completed and verified
-//     if (currentStage.completed && currentStage.verified) {
-//       return res.status(400).json({ message: `Stage ${stage} is already verified` });
-//     }
-
-//     // Mark the stage as completed and verified by admin
-//     currentStage.completed = true;
-//     currentStage.verified = true;
-
-//     // Move to the next stage if possible
-//     const nextStageIndex = withdrawal.stages.findIndex(s => s.name === stage) + 1;
-//     if (nextStageIndex < withdrawal.stages.length) {
-//       withdrawal.currentStage = withdrawal.stages[nextStageIndex].name;
-//     } else {
-//       withdrawal.status = "completed"; // All stages complete
-//       withdrawal.currentStage = null; // No more stages
-//     }
-
-//     // Save the user
-//     await user.save();
-
-//     res.status(200).json({ message: `Stage ${stage} completed and verified`, withdrawal });
-//   } catch (error) {
-//     console.error(error);
-//     res.status(500).json({ message: "Server error" });
-//   }
-// });
-
+// POST /confirm-withdrawal/:withdrawalId/:stage - Admin verifies a withdrawal stage
 router.post("/confirm-withdrawal/:withdrawalId/:stage", cors(), async (req, res) => {
   const { withdrawalId, stage } = req.params;
   const { verified } = req.body;
@@ -542,7 +488,7 @@ router.post("/confirm-withdrawal/:withdrawalId/:stage", cors(), async (req, res)
 
     if (allStagesCompleted) {
       // Deduct the amount from the user's balance
-      const account = user.accounts.find(acc => acc.accountId.toString() === withdrawal.accountId.toString());
+      const account = user.accounts.find(acc => acc.accountNumber === withdrawal.accountNumber);
       account.balance -= withdrawal.amount;
 
       // Mark withdrawal as completed
@@ -568,6 +514,31 @@ router.post("/confirm-withdrawal/:withdrawalId/:stage", cors(), async (req, res)
   }
 });
 
+// GET /admin/pending-withdrawals
+router.get('/admin/pending-withdrawals', cors(), async (req, res) => {
+  try {
+    // Find all users with pending withdrawals
+    const users = await User.find({ 'withdrawals.status': 'pending' });
+
+    // Collect all pending withdrawals
+    const withdrawals = [];
+    users.forEach(user => {
+      user.withdrawals.forEach(withdrawal => {
+        if (withdrawal.status === 'pending') {
+          withdrawals.push({
+            ...withdrawal.toObject(),
+            userId: user._id,
+          });
+        }
+      });
+    });
+
+    res.status(200).json({ withdrawals });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ message: 'Server error' });
+  }
+});
 
 // Send Notification Endpoint
 router.post("/send-notification", async (req, res) => {
