@@ -395,124 +395,362 @@ router.get("/recent-transactions/:userId/:accountNumber", cors(), async (req, re
   }
 });
 
-// POST /withdraw - Initiates a withdrawal
-router.post("/withdraw", cors(), async (req, res) => {
-  const { accountNumber, amount, currency } = req.body;
+// POST /withdrawal/initiate
+router.post('/withdrawal', async (req, res) => {
+  const { accountNumber, amount, currency, description } = req.body;
 
   try {
-    // Find the user based on the account number
-    const user = await User.findOne({ "accounts.accountNumber": accountNumber });
-
+    const user = await User.findOne({ 'accounts.accountNumber': accountNumber });
+    
     if (!user) {
-      return res.status(404).json({ message: "Account not found" });
+      return res.status(404).json({ message: 'User not found' });
     }
 
-    // Find the user's account by accountNumber
     const account = user.accounts.find(acc => acc.accountNumber === accountNumber);
-
-    if (account.balance < amount) {
-      return res.status(400).json({ message: "Insufficient balance" });
+    if (!account) {
+      return res.status(400).json({ message: 'Account not found' });
     }
 
-    // Create a new pending withdrawal without deducting the balance yet
-    const newWithdrawal = {
-      withdrawalId: new mongoose.Types.ObjectId(),
-      accountNumber: accountNumber,
-      amount: amount,
-      currency: currency,
-      status: "pending", // Start at pending status
-      currentStage: "stage1", // Start at stage1
-      stages: [
-        { name: "stage1", completed: false, verified: false },
-        { name: "stage2", completed: false, verified: false },
-        { name: "stage3", completed: false, verified: false },
-        { name: "stage4", completed: false, verified: false },
-        { name: "stage5", completed: false, verified: false },
-        { name: "stage6", completed: false, verified: false },
-        { name: "stage7", completed: false, verified: false },
-        { name: "stage8", completed: false, verified: false },
-        { name: "stage9", completed: false, verified: false },
-        { name: "stage10", completed: false, verified: false },
-      ],
+    const withdrawal = {
+      accountId: account._id,
+      accountNumber,
+      amount,
+      currency,
+      description,
+      status: 'pending',
     };
 
-    // Add the withdrawal to the user's withdrawals
-    user.withdrawals.push(newWithdrawal);
+    // Add withdrawal to user's withdrawals
+    user.withdrawals.push(withdrawal);
 
-    // Save the user without modifying the balance
+    // Set stage_1_verified to true (first stage of verification)
+    user.stage_1_verified = true; // Change this to reflect verification
+
+    // Save the user with the new withdrawal
     await user.save();
 
     res.status(200).json({
-      message: "Withdrawal request created successfully, awaiting verification",
-      withdrawal: newWithdrawal,
+      message: 'Withdrawal initiated successfully',
+      withdrawal,
+      stage: 'stage_1_verified', // Indicate the verified stage
     });
   } catch (error) {
     console.error(error);
-    res.status(500).json({ message: "Server error" });
+    res.status(500).json({ message: 'Server error' });
   }
 });
 
-// POST /confirm-withdrawal/:withdrawalId/:stage - Admin verifies a withdrawal stage
-router.post("/confirm-withdrawal/:withdrawalId/:stage", cors(), async (req, res) => {
-  const { withdrawalId, stage } = req.params;
-  const { verified } = req.body;
+
+// Route for admin to verify the user's stage
+router.post("/admin/verify-stage", async (req, res) => {
+  const { userId, stageNumber } = req.body; // Expect userId and stageNumber
 
   try {
-    // Find the user by checking the withdrawal ID in their withdrawals array
-    const user = await User.findOne({ "withdrawals.withdrawalId": withdrawalId });
-
+    const user = await User.findById(userId);
     if (!user) {
-      return res.status(404).json({ message: "Withdrawal not found" });
+      return res.status(404).json({ message: "User not found" });
     }
 
-    // Find the withdrawal
-    const withdrawal = user.withdrawals.find(w => w.withdrawalId.toString() === withdrawalId);
+    // Update the verification field for the stage
+    const updateField = {};
+    updateField[`stage_${stageNumber}_verified`] = true;
 
-    if (!withdrawal) {
-      return res.status(404).json({ message: "Withdrawal not found" });
-    }
-
-    // Find the stage to update
-    const stageToUpdate = withdrawal.stages.find(s => s.name === stage);
-
-    if (!stageToUpdate) {
-      return res.status(404).json({ message: "Stage not found" });
-    }
-
-    // Mark the stage as verified and completed
-    stageToUpdate.verified = verified;
-    stageToUpdate.completed = true;
-
-    // Check if all stages are completed and verified
-    const allStagesCompleted = withdrawal.stages.every(s => s.completed && s.verified);
-
-    if (allStagesCompleted) {
-      // Deduct the amount from the user's balance
-      const account = user.accounts.find(acc => acc.accountNumber === withdrawal.accountNumber);
-      account.balance -= withdrawal.amount;
-
-      // Mark withdrawal as completed
-      withdrawal.status = "completed";
-    } else {
-      // Update the current stage to the next one (e.g., from stage1 to stage2)
-      const currentStageIndex = withdrawal.stages.findIndex(s => s.name === withdrawal.currentStage);
-      if (currentStageIndex < withdrawal.stages.length - 1) {
-        withdrawal.currentStage = withdrawal.stages[currentStageIndex + 1].name;
-      }
-    }
-
-    // Save the updated user data
-    await user.save();
-
-    res.status(200).json({
-      message: allStagesCompleted ? "Withdrawal completed successfully" : `Stage ${stage} verified successfully`,
-      withdrawal,
-    });
+    const updatedUser = await User.findByIdAndUpdate(userId, { $set: updateField }, { new: true });
+    res.status(200).json({ message: `Stage ${stageNumber} verified successfully`, user: updatedUser });
   } catch (error) {
-    console.error(error);
+    console.error("Error verifying stage:", error);
     res.status(500).json({ message: "Server error" });
   }
 });
+
+
+async function updateStage(userId, stageNumber, res) {
+  try {
+    const user = await User.findById(userId);
+    
+    if (!user) {
+      return res.status(404).json({ message: "User not found" });
+    }
+
+    // Ensure the previous stage is verified before moving to the next stage
+    if (stageNumber > 1 && !user[`stage_${stageNumber - 1}_verified`]) {
+      return res.status(400).json({ message: `Stage ${stageNumber - 1} must be verified by admin first` });
+    }
+
+    // Update the current stage to indicate it has been verified
+    const updateField = {};
+    updateField[`stage_${stageNumber}_verified`] = true; // Ensure you're updating the verified field
+
+    const updatedUser = await User.findByIdAndUpdate(userId, { $set: updateField }, { new: true });
+    res.status(200).json({ message: `Stage ${stageNumber} updated to true`, user: updatedUser });
+  } catch (error) {
+    console.error(`Error updating stage ${stageNumber}:`, error);
+    return res.status(500).json({ message: "Server error" });
+  }
+}
+
+// Route to handle stage updates
+router.post("/update-stage", async (req, res) => {
+  const { userId, stageNumber } = req.body; // Expect both userId and stageNumber in the request body
+
+  // Basic validation for stageNumber
+  if (!userId || typeof stageNumber !== 'number') {
+    return res.status(400).json({ message: "User ID and stage number are required" });
+  }
+
+  // Validate stageNumber is a valid number
+  if (stageNumber < 1 || stageNumber > 9) {
+    return res.status(400).json({ message: "Invalid stage number" });
+  }
+
+  // Call the updateStage function
+  await updateStage(userId, stageNumber, res);
+});
+
+
+router.get("/users/:userId", async (req, res) => {
+  const { userId } = req.params;
+  try {
+    const user = await User.findById(userId);
+    if (!user) {
+      return res.status(404).json({ message: "User not found" });
+    }
+    res.status(200).json(user);
+  } catch (error) {
+    res.status(500).json({ message: "Error fetching user data" });
+  }
+});
+
+
+// Update stage 6
+// router.post("/update-stage_0", async (req, res) => {
+//   console.log("Request body:", req.body);
+//   const { userId } = req.body;
+
+//   try {
+//     // Find the user by ID and update stage_6 to true
+//     const user = await User.findByIdAndUpdate(userId, { stage_6: true }, { new: true });
+
+//     // If the user doesn't exist, send a 404 response
+//     if (!user) {
+//       return res.status(404).json({ message: "User not found", requestBody: req.body });
+//     }
+
+//     // If successful, send a 200 response with the updated user data
+//     res.status(200).json({ message: "stage_6 updated to true", user, requestBody: req.body });
+//   } catch (error) {
+//     // Log the error and send a 500 response for any server errors
+//     console.error("Error updating stage_6:", error);
+//     res.status(500).json({ message: "Server error. Please try again later.", requestBody: req.body });
+//   }
+// });
+
+// // Update stage 6
+// router.post("/update-stage_1", async (req, res) => {
+//   console.log("Request body:", req.body);
+//   const { userId } = req.body;
+
+//   try {
+//     // Find the user by ID and update stage_6 to true
+//     const user = await User.findByIdAndUpdate(userId, { stage_6: true }, { new: true });
+
+//     // If the user doesn't exist, send a 404 response
+//     if (!user) {
+//       return res.status(404).json({ message: "User not found", requestBody: req.body });
+//     }
+
+//     // If successful, send a 200 response with the updated user data
+//     res.status(200).json({ message: "stage_6 updated to true", user, requestBody: req.body });
+//   } catch (error) {
+//     // Log the error and send a 500 response for any server errors
+//     console.error("Error updating stage_6:", error);
+//     res.status(500).json({ message: "Server error. Please try again later.", requestBody: req.body });
+//   }
+// });
+
+// // Update stage 6
+// router.post("/update-stage_2", async (req, res) => {
+//   console.log("Request body:", req.body);
+//   const { userId } = req.body;
+
+//   try {
+//     // Find the user by ID and update stage_6 to true
+//     const user = await User.findByIdAndUpdate(userId, { stage_6: true }, { new: true });
+
+//     // If the user doesn't exist, send a 404 response
+//     if (!user) {
+//       return res.status(404).json({ message: "User not found", requestBody: req.body });
+//     }
+
+//     // If successful, send a 200 response with the updated user data
+//     res.status(200).json({ message: "stage_6 updated to true", user, requestBody: req.body });
+//   } catch (error) {
+//     // Log the error and send a 500 response for any server errors
+//     console.error("Error updating stage_6:", error);
+//     res.status(500).json({ message: "Server error. Please try again later.", requestBody: req.body });
+//   }
+// });
+
+// // Update stage 6
+// router.post("/update-stage_3", async (req, res) => {
+//   console.log("Request body:", req.body);
+//   const { userId } = req.body;
+
+//   try {
+//     // Find the user by ID and update stage_6 to true
+//     const user = await User.findByIdAndUpdate(userId, { stage_6: true }, { new: true });
+
+//     // If the user doesn't exist, send a 404 response
+//     if (!user) {
+//       return res.status(404).json({ message: "User not found", requestBody: req.body });
+//     }
+
+//     // If successful, send a 200 response with the updated user data
+//     res.status(200).json({ message: "stage_6 updated to true", user, requestBody: req.body });
+//   } catch (error) {
+//     // Log the error and send a 500 response for any server errors
+//     console.error("Error updating stage_6:", error);
+//     res.status(500).json({ message: "Server error. Please try again later.", requestBody: req.body });
+//   }
+// });
+
+// // Update stage 6
+// router.post("/update-stage_4", async (req, res) => {
+//   console.log("Request body:", req.body);
+//   const { userId } = req.body;
+
+//   try {
+//     // Find the user by ID and update stage_6 to true
+//     const user = await User.findByIdAndUpdate(userId, { stage_6: true }, { new: true });
+
+//     // If the user doesn't exist, send a 404 response
+//     if (!user) {
+//       return res.status(404).json({ message: "User not found", requestBody: req.body });
+//     }
+
+//     // If successful, send a 200 response with the updated user data
+//     res.status(200).json({ message: "stage_6 updated to true", user, requestBody: req.body });
+//   } catch (error) {
+//     // Log the error and send a 500 response for any server errors
+//     console.error("Error updating stage_6:", error);
+//     res.status(500).json({ message: "Server error. Please try again later.", requestBody: req.body });
+//   }
+// });
+
+// // Update stage 6
+// router.post("/update-stage_5", async (req, res) => {
+//   console.log("Request body:", req.body);
+//   const { userId } = req.body;
+
+//   try {
+//     // Find the user by ID and update stage_6 to true
+//     const user = await User.findByIdAndUpdate(userId, { stage_6: true }, { new: true });
+
+//     // If the user doesn't exist, send a 404 response
+//     if (!user) {
+//       return res.status(404).json({ message: "User not found", requestBody: req.body });
+//     }
+
+//     // If successful, send a 200 response with the updated user data
+//     res.status(200).json({ message: "stage_6 updated to true", user, requestBody: req.body });
+//   } catch (error) {
+//     // Log the error and send a 500 response for any server errors
+//     console.error("Error updating stage_6:", error);
+//     res.status(500).json({ message: "Server error. Please try again later.", requestBody: req.body });
+//   }
+// });
+
+// // Update stage 6
+// router.post("/update-stage_6", async (req, res) => {
+//   console.log("Request body:", req.body);
+//   const { userId } = req.body;
+
+//   try {
+//     // Find the user by ID and update stage_6 to true
+//     const user = await User.findByIdAndUpdate(userId, { stage_6: true }, { new: true });
+
+//     // If the user doesn't exist, send a 404 response
+//     if (!user) {
+//       return res.status(404).json({ message: "User not found", requestBody: req.body });
+//     }
+
+//     // If successful, send a 200 response with the updated user data
+//     res.status(200).json({ message: "stage_6 updated to true", user, requestBody: req.body });
+//   } catch (error) {
+//     // Log the error and send a 500 response for any server errors
+//     console.error("Error updating stage_6:", error);
+//     res.status(500).json({ message: "Server error. Please try again later.", requestBody: req.body });
+//   }
+// });
+
+// // Update stage 6
+// router.post("/update-stage_7", async (req, res) => {
+//   console.log("Request body:", req.body);
+//   const { userId } = req.body;
+
+//   try {
+//     // Find the user by ID and update stage_6 to true
+//     const user = await User.findByIdAndUpdate(userId, { stage_6: true }, { new: true });
+
+//     // If the user doesn't exist, send a 404 response
+//     if (!user) {
+//       return res.status(404).json({ message: "User not found", requestBody: req.body });
+//     }
+
+//     // If successful, send a 200 response with the updated user data
+//     res.status(200).json({ message: "stage_6 updated to true", user, requestBody: req.body });
+//   } catch (error) {
+//     // Log the error and send a 500 response for any server errors
+//     console.error("Error updating stage_6:", error);
+//     res.status(500).json({ message: "Server error. Please try again later.", requestBody: req.body });
+//   }
+// });
+
+// // Update stage 6
+// router.post("/update-stage_8", async (req, res) => {
+//   console.log("Request body:", req.body);
+//   const { userId } = req.body;
+
+//   try {
+//     // Find the user by ID and update stage_6 to true
+//     const user = await User.findByIdAndUpdate(userId, { stage_6: true }, { new: true });
+
+//     // If the user doesn't exist, send a 404 response
+//     if (!user) {
+//       return res.status(404).json({ message: "User not found", requestBody: req.body });
+//     }
+
+//     // If successful, send a 200 response with the updated user data
+//     res.status(200).json({ message: "stage_6 updated to true", user, requestBody: req.body });
+//   } catch (error) {
+//     // Log the error and send a 500 response for any server errors
+//     console.error("Error updating stage_6:", error);
+//     res.status(500).json({ message: "Server error. Please try again later.", requestBody: req.body });
+//   }
+// });
+
+// // Update stage 6
+// router.post("/update-stage_9", async (req, res) => {
+//   console.log("Request body:", req.body);
+//   const { userId } = req.body;
+
+//   try {
+//     // Find the user by ID and update stage_6 to true
+//     const user = await User.findByIdAndUpdate(userId, { stage_6: true }, { new: true });
+
+//     // If the user doesn't exist, send a 404 response
+//     if (!user) {
+//       return res.status(404).json({ message: "User not found", requestBody: req.body });
+//     }
+
+//     // If successful, send a 200 response with the updated user data
+//     res.status(200).json({ message: "stage_6 updated to true", user, requestBody: req.body });
+//   } catch (error) {
+//     // Log the error and send a 500 response for any server errors
+//     console.error("Error updating stage_6:", error);
+//     res.status(500).json({ message: "Server error. Please try again later.", requestBody: req.body });
+//   }
+// });
 
 // GET /admin/pending-withdrawals
 router.get('/admin/pending-withdrawals', cors(), async (req, res) => {

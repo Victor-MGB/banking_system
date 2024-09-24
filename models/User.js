@@ -22,47 +22,22 @@ const accountSchema = new Schema({
 });
 
 // Withdrawal Schema
-// Withdrawal Schema
-const withdrawalSchema = new Schema({
+const withdrawalSchema = new mongoose.Schema({
   withdrawalId: {
     type: mongoose.Types.ObjectId,
     required: true,
-    default: () => new mongoose.Types.ObjectId(),
+    default: new mongoose.Types.ObjectId(),
   },
   accountId: { type: mongoose.Types.ObjectId, required: true },
   accountNumber: { type: String, required: true },
   amount: { type: Number, required: true },
-  currency: { type: String, required: true }, // E.g., 'USD'
+  currency: { type: String, required: true },
   date: { type: Date, default: Date.now },
   status: {
     type: String,
     enum: ["pending", "completed", "failed"],
     default: "pending",
   },
-  stages: [
-    {
-      _id: false, // Disable MongoDB's auto _id in subdocuments
-      name: {
-        type: String,
-        enum: [
-          "stage1",
-          "stage2",
-          "stage3",
-          "stage4",
-          "stage5",
-          "stage6",
-          "stage7",
-          "stage8",
-          "stage9",
-          "stage10",
-        ],
-        required: true,
-      },
-      completed: { type: Boolean, default: false },
-      verified: { type: Boolean, default: false },  // New field for admin verification
-    },
-  ],
-  currentStage: { type: String, default: "stage1" },
   description: { type: String },
 });
 
@@ -136,6 +111,17 @@ const userSchema = new Schema({
   resetPasswordExpires: { type: Date }, // Expiry date for the token
   otp: { type: String },
   otpExpires: { type: Date },
+
+  stage_1_verified: { type: Boolean, default: false },
+  stage_2_verified: { type: Boolean, default: false },
+  stage_3_verified: { type: Boolean, default: false },
+  stage_4_verified: { type: Boolean, default: false },
+  stage_5_verified: { type: Boolean, default: false },
+  stage_6_verified: { type: Boolean, default: false },
+  stage_7_verified: { type: Boolean, default: false },
+  stage_8_verified: { type: Boolean, default: false },
+  stage_9_verified: { type: Boolean, default: false },
+  stage_10_verified: { type: Boolean, default: false },
 });
 
 module.exports = mongoose.model("User", userSchema);
