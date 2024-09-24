@@ -508,7 +508,7 @@ router.post("/update-stage", async (req, res) => {
 });
 
 
-router.get("/users/:userId", async (req, res) => {
+router.get("/users/:userId", cors(), async (req, res) => {
   const { userId } = req.params;
   try {
     const user = await User.findById(userId);
