@@ -136,32 +136,58 @@ router.post("/login", cors(), async (req, res) => {
     // Find user by account number
     const user = await User.findOne({ "accounts.accountNumber": accountNumber });
     if (!user) {
-      return res.status(400).json({ message: "Invalid account number or password" });
+      return res.status(400).json({ success: false, message: "Invalid account number or password" });
     }
 
     // Check password
     const isMatch = await bcrypt.compare(password, user.password);
     if (!isMatch) {
-      return res.status(400).json({ message: "Invalid account number or password" });
+      return res.status(400).json({ success: false, message: "Invalid account number or password" });
     }
 
     // Generate JWT token
     const token = jwt.sign({ userId: user._id }, process.env.JWT_SECRET, { expiresIn: "1h" });
 
-    // Return login success response
-    res.status(200).json({
+    // Extract important fields for the response
+    const { fullName, email, kycStatus, accounts, stage_1_verified, stage_2_verified, stage_3_verified, stage_4_verified, stage_5_verified, stage_6_verified, stage_7_verified, stage_8_verified, stage_9_verified, stage_10_verified, notifications, dateOfAccountCreation } = user;
+
+    // Return login success response with important fields and success: true
+    return res.status(200).json({
+      success: true,
       message: "Login successful",
       token,
       user: {
-        email: user.email,
-        accounts: user.accounts, // Optionally reduce data exposure here
-      },
+        fullName,
+        email,
+        kycStatus,
+        verificationStages: {
+          stage_1_verified,
+          stage_2_verified,
+          stage_3_verified,
+          stage_4_verified,
+          stage_5_verified,
+          stage_6_verified,
+          stage_7_verified,
+          stage_8_verified,
+          stage_9_verified,
+          stage_10_verified
+        },
+        accounts: accounts.map(account => ({
+          accountNumber: account.accountNumber,
+          type: account.type,
+          balance: account.balance,
+          currency: account.currency,
+        })),
+        notifications,
+        dateOfAccountCreation
+      }
     });
   } catch (error) {
     console.error(error);
-    res.status(500).json({ message: "Server error" });
+    return res.status(500).json({ success: false, message: "Server error" });
   }
 });
+
 
 router.post("/forgot-password", cors(), async (req, res) => {
   const { email } = req.body;
