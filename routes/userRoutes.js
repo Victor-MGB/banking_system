@@ -752,7 +752,7 @@ router.get("/users/:userId", cors(), async (req, res) => {
 // });
 
 // GET endpoint to fetch account details and balance
-router.get('/account/:accountNumber', async (req, res) => {
+router.get('/account/:accountNumber', cors(), async (req, res) => {
   try {
     const { accountNumber } = req.params;
 
@@ -790,7 +790,7 @@ router.get('/account/:accountNumber', async (req, res) => {
 
 
 // GET endpoint to fetch full account details
-router.get('/account/details/:accountNumber', async (req, res) => {
+router.get('/account/details/:accountNumber', cors(), async (req, res) => {
   try {
     const { accountNumber } = req.params;
 
