@@ -464,28 +464,27 @@ router.post("/admin/verify-stage", async (req, res) => {
 });
 
 
-async function updateStage(userId, stageNumber, res) {
+async function updateStage(req, res) {
+  const { userId, stageNumber } = req.body;
+
   try {
     const user = await User.findById(userId);
-    
+
     if (!user) {
-      return res.status(404).json({ message: "User not found" });
+      return res.status(404).json({ message: 'User not found' });
     }
 
-    // Ensure the previous stage is verified before moving to the next stage
-    if (stageNumber > 1 && !user[`stage_${stageNumber - 1}_verified`]) {
-      return res.status(400).json({ message: `Stage ${stageNumber - 1} must be verified by admin first` });
+    // Update the user's stage only if it's valid
+    if (stageNumber > user.currentStage) {
+      user.currentStage = stageNumber;
+      await user.save();
+      return res.status(200).json({ message: 'Stage updated successfully', currentStage: user.currentStage });
+    } else {
+      return res.status(400).json({ message: 'Invalid stage progression' });
     }
-
-    // Update the current stage to indicate it has been verified
-    const updateField = {};
-    updateField[`stage_${stageNumber}_verified`] = true; // Ensure you're updating the verified field
-
-    const updatedUser = await User.findByIdAndUpdate(userId, { $set: updateField }, { new: true });
-    res.status(200).json({ message: `Stage ${stageNumber} updated to true`, user: updatedUser });
   } catch (error) {
-    console.error(`Error updating stage ${stageNumber}:`, error);
-    return res.status(500).json({ message: "Server error" });
+    console.error('Server error during stage update:', error);
+    res.status(500).json({ message: 'Server error' });
   }
 }
 
@@ -752,6 +751,85 @@ router.get("/users/:userId", cors(), async (req, res) => {
 //   }
 // });
 
+// GET endpoint to fetch account details and balance
+router.get('/account/:accountNumber', async (req, res) => {
+  try {
+    const { accountNumber } = req.params;
+
+    // Find the user with the given account number
+    const user = await User.findOne({ 'accounts.accountNumber': accountNumber });
+
+    if (!user) {
+      return res.status(404).json({ message: 'Account not found' });
+    }
+
+    // Find the account details
+    const account = user.accounts.find(acc => acc.accountNumber === accountNumber);
+
+    // Check if account is found
+    if (!account) {
+      return res.status(404).json({ message: 'Account details not found' });
+    }
+
+    // Construct the response with account details
+    return res.status(200).json({
+      message: 'Account details retrieved successfully',
+      account: {
+        accountNumber: account.accountNumber,
+        type: account.type,
+        balance: account.balance,
+        currency: account.currency,
+        transactions: account.transactions, // Optional: Include transactions if needed
+      },
+    });
+  } catch (error) {
+    console.error(error);
+    return res.status(500).json({ message: 'Internal Server Error' });
+  }
+});
+
+
+// GET endpoint to fetch full account details
+router.get('/account/details/:accountNumber', async (req, res) => {
+  try {
+    const { accountNumber } = req.params;
+
+    // Find the user with the given account number
+    const user = await User.findOne({ 'accounts.accountNumber': accountNumber });
+
+    if (!user) {
+      return res.status(404).json({ message: 'Account not found' });
+    }
+
+    // Find the account details
+    const account = user.accounts.find(acc => acc.accountNumber === accountNumber);
+
+    // Check if account is found
+    if (!account) {
+      return res.status(404).json({ message: 'Account details not found' });
+    }
+
+    // Construct the response with account details
+    return res.status(200).json({
+      message: 'Account details retrieved successfully',
+      account: {
+        accountNumber: account.accountNumber,
+        type: account.type,
+        balance: account.balance,
+        currency: account.currency,
+        transactions: account.transactions || [], // Include transactions if available
+      },
+      user: {
+        fullName: user.fullName, // Include the user's full name
+      },
+    });
+  } catch (error) {
+    console.error(error);
+    return res.status(500).json({ message: 'Internal Server Error' });
+  }
+});
+
+
 // GET /admin/pending-withdrawals
 router.get('/admin/pending-withdrawals', cors(), async (req, res) => {
   try {
@@ -830,35 +908,6 @@ router.get("/notifications", cors(), async (req, res) => {
 
     // Return the user's notifications
     res.status(200).json({ notifications: user.notifications });
-  } catch (error) {
-    console.error(error);
-    res.status(500).json({ message: "Server error" });
-  }
-});
-
-
-
-// Get user balance by account number
-router.get("/get-balance/:accountNumber", async (req, res) => {
-  const { accountNumber } = req.params;
-
-  try {
-    // Find the user by account number
-    const user = await User.findOne({ "accounts.accountNumber": accountNumber });
-
-    if (!user) {
-      return res.status(404).json({ message: "User not found" });
-    }
-
-    // Find the specific account with the provided account number
-    const account = user.accounts.find(acc => acc.accountNumber === accountNumber);
-
-    if (!account) {
-      return res.status(404).json({ message: "Account not found" });
-    }
-
-    // Respond with the user's account balance
-    res.status(200).json({ balance: account.balance });
   } catch (error) {
     console.error(error);
     res.status(500).json({ message: "Server error" });
