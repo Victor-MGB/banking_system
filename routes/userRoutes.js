@@ -310,17 +310,19 @@ router.delete("/users/:id", cors(), async (req, res) => {
 });
 
 // Deposit route
+// Deposit route
 router.post("/deposit", cors(), async (req, res) => {
-  const { userId, accountNumber, amount, currency } = req.body;
+  const { accountNumber, amount, currency } = req.body;
 
   try {
-    // Find the user
-    const user = await User.findById(userId);
+    // Find the account by accountNumber
+    const user = await User.findOne({ 'accounts.accountNumber': accountNumber });
+
     if (!user) {
-      return res.status(404).json({ message: "User not found" });
+      return res.status(404).json({ message: "User or account not found" });
     }
 
-    // Find the account by accountNumber
+    // Find the specific account
     const account = user.accounts.find(acc => acc.accountNumber === accountNumber);
     if (!account) {
       return res.status(404).json({ message: "Account not found" });
@@ -350,6 +352,7 @@ router.post("/deposit", cors(), async (req, res) => {
     res.status(500).json({ message: "Server error" });
   }
 });
+
 
 router.put("/update-deposit", cors(), async (req, res) => {
   const { userId, accountNumber, transactionId, newAmount } = req.body;
