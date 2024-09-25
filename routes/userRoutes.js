@@ -309,7 +309,43 @@ router.delete("/users/:id", cors(), async (req, res) => {
   }
 });
 
-// Deposit route
+// Get total deposit balance for a user's account
+router.get("/deposits/:accountNumber", async (req, res) => {
+  const { accountNumber } = req.params;
+
+  try {
+    // Find the user based on the account number
+    const user = await User.findOne({ 'accounts.accountNumber': accountNumber });
+
+    if (!user) {
+      return res.status(404).json({ message: "User or account not found" });
+    }
+
+    // Find the account within the user's accounts array
+    const account = user.accounts.find(acc => acc.accountNumber === accountNumber);
+
+    if (!account) {
+      return res.status(404).json({ message: "Account not found" });
+    }
+
+    // Filter the transactions to get only deposits (credit transactions)
+    const deposits = account.transactions.filter(transaction => transaction.type === 'credit');
+
+    // Calculate the total deposit balance by summing up the amounts
+    const totalDepositBalance = deposits.reduce((total, transaction) => total + transaction.amount, 0);
+
+    // Return the total deposit balance
+    res.status(200).json({
+      message: "Total deposit balance retrieved successfully",
+      accountNumber: accountNumber,
+      totalDepositBalance: totalDepositBalance
+    });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ message: "Server error" });
+  }
+});
+
 // Deposit route
 router.post("/deposit", cors(), async (req, res) => {
   const { accountNumber, amount, currency } = req.body;
