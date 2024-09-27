@@ -13,8 +13,14 @@ const connectDB = require('./config/db'); // Import the MongoDB connection
 // Initialize express app
 const app = express();
 
-// Middleware
-app.use(cors()); // To allow cross-origin requests
+const corsOptions = {
+  origin: 'http://localhost:3000', // Replace with your frontend domain
+  methods: ['GET', 'POST'],
+  allowedHeaders: ['Content-Type', 'Authorization']
+};
+
+app.use(cors(corsOptions));// To allow cross-origin requests
+
 app.use(bodyParser.json()); // To parse JSON request bodies
 app.use(bodyParser.urlencoded({ extended: true }));
 

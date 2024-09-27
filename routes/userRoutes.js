@@ -309,35 +309,48 @@ router.delete("/users/:id", cors(), async (req, res) => {
   }
 });
 
-// Get total deposit balance for a user's account
-router.get("/deposits/:accountNumber", async (req, res) => {
-  const { accountNumber } = req.params;
+const authMiddleware = (req, res, next) => {
+  const authHeader = req.headers['authorization'];
+  if (!authHeader) {
+    return res.status(401).json({ message: "No authorization token provided." });
+  }
+  
+  const token = authHeader.split(' ')[1];
+  if (!token) {
+    return res.status(401).json({ message: "Token is missing." });
+  }
 
+  // Continue with token verification...
+  next();
+};
+
+// Get total deposit balance for the authenticated user's account
+router.get("/deposits", authMiddleware, async (req, res) => {
   try {
-    // Find the user based on the account number
-    const user = await User.findOne({ 'accounts.accountNumber': accountNumber });
+    const userId = req.user.id; // Get the user ID from the request
+
+    // Find the user based on the user ID
+    const user = await User.findById(userId); // Assuming the user is stored by ID
 
     if (!user) {
-      return res.status(404).json({ message: "User or account not found" });
+      return res.status(404).json({ message: "User not found" });
     }
 
-    // Find the account within the user's accounts array
-    const account = user.accounts.find(acc => acc.accountNumber === accountNumber);
+    // Initialize total deposit balance
+    let totalDepositBalance = 0;
 
-    if (!account) {
-      return res.status(404).json({ message: "Account not found" });
-    }
+    // Loop through each account to calculate the total deposit balance
+    user.accounts.forEach(account => {
+      // Filter the transactions to get only deposits (credit transactions)
+      const deposits = account.transactions.filter(transaction => transaction.type === 'credit');
 
-    // Filter the transactions to get only deposits (credit transactions)
-    const deposits = account.transactions.filter(transaction => transaction.type === 'credit');
-
-    // Calculate the total deposit balance by summing up the amounts
-    const totalDepositBalance = deposits.reduce((total, transaction) => total + transaction.amount, 0);
+      // Calculate the total deposit balance by summing up the amounts
+      totalDepositBalance += deposits.reduce((total, transaction) => total + transaction.amount, 0);
+    });
 
     // Return the total deposit balance
     res.status(200).json({
       message: "Total deposit balance retrieved successfully",
-      accountNumber: accountNumber,
       totalDepositBalance: totalDepositBalance
     });
   } catch (error) {
@@ -345,6 +358,8 @@ router.get("/deposits/:accountNumber", async (req, res) => {
     res.status(500).json({ message: "Server error" });
   }
 });
+
+
 
 // Deposit route
 router.post("/deposit", cors(), async (req, res) => {
@@ -952,30 +967,17 @@ router.post("/send-notification", async (req, res) => {
     // Save the updated user document
     await user.save();
 
-    return res.status(200).json({ message: "Notification sent successfully.", notification: newNotification });
+    // Send email to the user
+    const emailSubject = "New Notification from CentralCityBank";
+    const emailText = `Hello ${user.fullName},\n\nYou have a new notification: ${message}`;
+    const emailHtml = `<p>Hello ${user.fullName},</p><p>You have a new notification:</p><p><strong>${message}</strong></p>`;
+
+    await sendEmail(email, emailSubject, emailText, emailHtml);
+
+    return res.status(200).json({ message: "Notification sent successfully and email delivered.", notification: newNotification });
   } catch (error) {
     console.error(error);
     res.status(500).json({ message: "Server error." });
-  }
-});
-
-// Fetch Notifications Endpoint
-router.get("/notifications", cors(), async (req, res) => {
-  const { email } = req.query; // Assuming user identifies by email
-
-  try {
-    // Find the user by email
-    const user = await User.findOne({ email });
-
-    if (!user) {
-      return res.status(404).json({ message: "User not found" });
-    }
-
-    // Return the user's notifications
-    res.status(200).json({ notifications: user.notifications });
-  } catch (error) {
-    console.error(error);
-    res.status(500).json({ message: "Server error" });
   }
 });
 
