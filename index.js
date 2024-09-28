@@ -1,5 +1,3 @@
-// index.js (or server.js)
-
 require('dotenv').config(); // Load environment variables from .env
 
 const express = require('express');
@@ -18,11 +16,7 @@ const app = express();
 app.use(bodyParser.json()); // To parse JSON request bodies
 app.use(bodyParser.urlencoded({ extended: true }));
 
-app.use(
-  cors({
-    origin: "http://localhost:3000"
-  })
-)
+app.use(cors())
 
 // Connect to MongoDB
 connectDB(); // Call the MongoDB connection function

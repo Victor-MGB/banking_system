@@ -529,42 +529,44 @@ router.post("/admin/verify-stage", async (req, res) => {
 
 async function updateStage(req, res) {
   const { userId, stageNumber } = req.body;
-  
-  console.log('Incoming request data:', req.body); // Log request data
 
   try {
     const user = await User.findById(userId);
 
     if (!user) {
-      console.log('User not found for userId:', userId); // Log if user not found
       return res.status(404).json({ message: 'User not found' });
     }
 
+    // Log the current stage and requested stageNumber
+    console.log(`Current stage: ${user.currentStage}, Requested new stage: ${stageNumber}`);
+
+    // Update the user's stage only if it's valid
     if (stageNumber > user.currentStage) {
       user.currentStage = stageNumber;
       await user.save();
-      console.log('Stage updated successfully:', user.currentStage); // Log successful update
       return res.status(200).json({ message: 'Stage updated successfully', currentStage: user.currentStage });
     } else {
-      console.log('Invalid stage progression'); // Log invalid progression
-      return res.status(400).json({ message: 'Invalid stage progression' });
+      return res.status(400).json({ 
+        message: `Invalid stage progression. Current stage is ${user.currentStage}, but received ${stageNumber}.` 
+      });
     }
   } catch (error) {
-    console.error('Server error during stage update:', error); // Log the actual error
+    console.error('Server error during stage update:', error);
     res.status(500).json({ message: 'Server error' });
   }
 }
 
-
 // Route to handle stage updates
 router.post("/update-stage", cors(), async (req, res) => {
-  const { userId, stageNumber } = req.body;
+  const { userId, stageNumber } = req.body; // Expect both userId and stageNumber in the request body
 
-  if (!userId || !mongoose.Types.ObjectId.isValid(userId)) {
-    return res.status(400).json({ message: "Invalid user ID" });
+  // Basic validation for stageNumber
+  if (!userId || typeof stageNumber !== 'number') {
+    return res.status(400).json({ message: "User ID and stage number are required" });
   }
 
-  if (typeof stageNumber !== 'number' || stageNumber < 1 || stageNumber > 9) {
+  // Validate stageNumber is a valid number
+  if (stageNumber < 1 || stageNumber > 9) {
     return res.status(400).json({ message: "Invalid stage number" });
   }
 
