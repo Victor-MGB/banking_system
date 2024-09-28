@@ -569,7 +569,7 @@ async function updateStage(req, res) {
 }
 
 // Route to handle stage updates
-router.post("/update-stage", async (req, res) => {
+router.post("/update-stage", cors(), async (req, res) => {
   const { userId, stageNumber } = req.body; // Expect both userId and stageNumber in the request body
 
   // Basic validation for stageNumber

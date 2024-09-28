@@ -32,36 +32,61 @@ router.post('/register', cors(), async (req, res) => {
 
 // Admin Login
 router.post('/login', cors(), async (req, res) => {
-  const { email, password } = req.body;
-
-  try {
-    const admin = await Admin.findOne({ email });
-    if (!admin) {
-      return res.status(400).json({ msg: 'Invalid credentials' });
-    }
-
-    // Check password
-    const isMatch = await bcrypt.compare(password, admin.password);
-    if (!isMatch) {
-      return res.status(400).json({ msg: 'Invalid credentials' });
-    }
-
-    // Create a JWT payload and sign it
-    const payload = {
-      admin: {
-        id: admin.id,
-        role: admin.role
+    const { email, password } = req.body;
+  
+    try {
+      // Check if admin exists
+      const admin = await Admin.findOne({ email });
+      if (!admin) {
+        return res.status(400).json({
+          msg: 'Invalid email or password',
+          success: false,
+          icon: 'error', // Optional for front-end use
+        });
       }
-    };
-
-    const token = jwt.sign(payload, process.env.JWT_SECRET, { expiresIn: '1h' });
-
-    res.json({ token, msg: 'Admin logged in successfully',admin, success:true });
-  } catch (err) {
-    console.error(err.message);
-    res.status(500).send('Server Error');
-  }
-});
+  
+      // Verify password
+      const isMatch = await bcrypt.compare(password, admin.password);
+      if (!isMatch) {
+        return res.status(400).json({
+          msg: 'Invalid email or password',
+          success: false,
+          icon: 'error', // Optional for front-end use
+        });
+      }
+  
+      // JWT payload and token generation
+      const payload = {
+        admin: {
+          id: admin.id,
+          role: admin.role
+        }
+      };
+  
+      const token = jwt.sign(payload, process.env.JWT_SECRET, { expiresIn: '1h' });
+  
+      // Return token and admin data upon successful login
+      res.json({
+        token,
+        msg: 'Admin logged in successfully',
+        success: true,
+        admin: {
+          id: admin.id,
+          email: admin.email,
+          role: admin.role,
+        },
+        icon: 'success' // Optional for front-end use
+      });
+  
+    } catch (err) {
+      console.error(err.message);
+      res.status(500).json({
+        msg: 'Server error, please try again later',
+        success: false,
+        icon: 'error'
+      });
+    }
+  });
 
 // Protected route example
 router.get('/dashboard', (req, res) => {
