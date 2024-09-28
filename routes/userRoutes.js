@@ -464,13 +464,11 @@ router.get("/recent-transactions/:userId/:accountNumber", cors(), async (req, re
   }
 });
 
-// POST /withdrawal/initiate
 router.post('/withdrawal', async (req, res) => {
   const { accountNumber, amount, currency, description } = req.body;
 
   try {
     const user = await User.findOne({ 'accounts.accountNumber': accountNumber });
-    
     if (!user) {
       return res.status(404).json({ message: 'User not found' });
     }
@@ -489,26 +487,21 @@ router.post('/withdrawal', async (req, res) => {
       status: 'pending',
     };
 
-    // Add withdrawal to user's withdrawals
+    // Add the withdrawal request
     user.withdrawals.push(withdrawal);
-
-    // Set stage_1_verified to true (first stage of verification)
-    user.stage_1_verified = true; // Change this to reflect verification
-
-    // Save the user with the new withdrawal
+    user.stage_1_verified = true; // Reflect the first stage of verification
     await user.save();
 
-    res.status(200).json({
+    return res.status(200).json({
       message: 'Withdrawal initiated successfully',
       withdrawal,
-      stage: 'stage_1_verified', // Indicate the verified stage
+      stage: 'stage_1_verified',
     });
   } catch (error) {
-    console.error(error);
-    res.status(500).json({ message: 'Server error' });
+    console.error('Server error during withdrawal:', error);
+    return res.status(500).json({ message: 'Server error' });
   }
 });
-
 
 // Route for admin to verify the user's stage
 router.post("/admin/verify-stage", async (req, res) => {
@@ -539,41 +532,37 @@ async function updateStage(req, res) {
 
   try {
     const user = await User.findById(userId);
-
     if (!user) {
       return res.status(404).json({ message: 'User not found' });
     }
 
-    // Update the user's stage only if it's valid
+    // Only allow stage progression (e.g., moving from stage 1 to 2, but not backward)
     if (stageNumber > user.currentStage) {
       user.currentStage = stageNumber;
       await user.save();
-      return res.status(200).json({ message: 'Stage updated successfully', currentStage: user.currentStage });
+      return res.status(200).json({
+        message: `Stage updated to ${stageNumber}`,
+        currentStage: user.currentStage
+      });
     } else {
       return res.status(400).json({ message: 'Invalid stage progression' });
     }
   } catch (error) {
-    console.error('Server error during stage update:', error);
-    res.status(500).json({ message: 'Server error' });
+    console.error('Error updating stage:', error);
+    return res.status(500).json({ message: 'Server error' });
   }
 }
 
-// Route to handle stage updates
-router.post("/update-stage", cors(), async (req, res) => {
-  const { userId, stageNumber } = req.body; // Expect both userId and stageNumber in the request body
-
-  // Basic validation for stageNumber
-  if (!userId || typeof stageNumber !== 'number') {
-    return res.status(400).json({ message: "User ID and stage number are required" });
+// Route to update stage
+router.post('/update-stage', async (req, res) => {
+  // Validate request
+  const { userId, stageNumber } = req.body;
+  if (!userId || typeof stageNumber !== 'number' || stageNumber < 1 || stageNumber > 10) {
+    return res.status(400).json({ message: 'Invalid user ID or stage number' });
   }
 
-  // Validate stageNumber is a valid number
-  if (stageNumber < 1 || stageNumber > 9) {
-    return res.status(400).json({ message: "Invalid stage number" });
-  }
-
-  // Call the updateStage function
-  await updateStage(userId, stageNumber, res);
+  // Call updateStage
+  await updateStage(req, res);
 });
 
 
