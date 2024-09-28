@@ -404,15 +404,14 @@ router.post("/deposit", cors(), async (req, res) => {
   }
 });
 
-
 router.put("/update-deposit", cors(), async (req, res) => {
-  const { userId, accountNumber, transactionId, newAmount } = req.body;
+  const { accountNumber, newAmount } = req.body;
 
   try {
-    // Find the user
-    const user = await User.findById(userId);
+    // Find the user by their accounts' account numbers
+    const user = await User.findOne({ "accounts.accountNumber": accountNumber });
     if (!user) {
-      return res.status(404).json({ message: "User not found" });
+      return res.status(404).json({ message: "Account not found" });
     }
 
     // Find the account by accountNumber
@@ -421,18 +420,8 @@ router.put("/update-deposit", cors(), async (req, res) => {
       return res.status(404).json({ message: "Account not found" });
     }
 
-    // Find the transaction by transactionId
-    const transaction = account.transactions.find(t => t.transactionId.toString() === transactionId);
-    if (!transaction) {
-      return res.status(404).json({ message: "Transaction not found" });
-    }
-
-    // Update the transaction amount
-    const oldAmount = transaction.amount;
-    transaction.amount = newAmount;
-
-    // Adjust the account balance
-    account.balance = account.balance - oldAmount + newAmount;
+    // Adjust the account balance by adding the new amount to the current balance
+    account.balance += newAmount;
 
     // Recalculate the user's total balance
     user.balance = user.accounts.reduce((totalBalance, acc) => totalBalance + acc.balance, 0);
@@ -523,10 +512,11 @@ router.post('/withdrawal', async (req, res) => {
 
 // Route for admin to verify the user's stage
 router.post("/admin/verify-stage", async (req, res) => {
-  const { userId, stageNumber } = req.body; // Expect userId and stageNumber
+  const { accountNumber, stageNumber } = req.body; // Expect accountNumber and stageNumber
 
   try {
-    const user = await User.findById(userId);
+    // Find the user by their account number
+    const user = await User.findOne({ "accounts.accountNumber": accountNumber });
     if (!user) {
       return res.status(404).json({ message: "User not found" });
     }
@@ -535,7 +525,7 @@ router.post("/admin/verify-stage", async (req, res) => {
     const updateField = {};
     updateField[`stage_${stageNumber}_verified`] = true;
 
-    const updatedUser = await User.findByIdAndUpdate(userId, { $set: updateField }, { new: true });
+    const updatedUser = await User.findByIdAndUpdate(user._id, { $set: updateField }, { new: true });
     res.status(200).json({ message: `Stage ${stageNumber} verified successfully`, user: updatedUser });
   } catch (error) {
     console.error("Error verifying stage:", error);
@@ -1025,6 +1015,71 @@ router.post("/generate-statement", async (req, res) => {
   } catch (error) {
     console.error("Error generating statement:", error);
     res.status(500).json({ message: "Error generating statement. Please try again later." });
+  }
+});
+
+
+router.post("/transaction/:userId/:accountId", async (req, res) => {
+  try {
+    const { userId, accountId } = req.params;
+    const { type, amount, currency, description } = req.body;
+
+    // Validate required fields
+    if (!type || !amount || !currency || !description) {
+      return res.status(400).json({ error: "All fields are required" });
+    }
+
+    // Find the user by userId and accountId
+    const user = await User.findOne({
+      _id: userId,
+      "accounts.accountId": accountId,
+    });
+
+    if (!user) {
+      return res.status(404).json({ error: "User or Account not found" });
+    }
+
+    // Find the account
+    const account = user.accounts.find((acc) => acc.accountId.toString() === accountId.toString());
+
+    if (!account) {
+      return res.status(404).json({ error: "Account not found" });
+    }
+
+    // Create a new transaction
+    const transaction = {
+      transactionId: new mongoose.Types.ObjectId(),
+      date: new Date(),
+      type, // Either 'credit' or 'debit'
+      amount: parseFloat(amount),
+      currency,
+      description,
+    };
+
+    // Update the balance based on the transaction type
+    if (transaction.type === "credit") {
+      account.balance += transaction.amount; // Add to balance
+    } else if (transaction.type === "debit") {
+      if (account.balance >= transaction.amount) {
+        account.balance -= transaction.amount; // Subtract from balance
+      } else {
+        return res.status(400).json({ error: "Insufficient balance" });
+      }
+    }
+
+    // Push the new transaction to the account's transactions array
+    account.transactions.push(transaction);
+
+    // Save the updated user document
+    await user.save();
+
+    return res.status(200).json({
+      message: "Transaction added and balance updated successfully",
+      account: account,
+    });
+  } catch (err) {
+    console.error(err.message);
+    return res.status(500).json({ error: "Server error" });
   }
 });
 
