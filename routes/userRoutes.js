@@ -806,6 +806,64 @@ router.post('/withdrawal/verify-stage-10', async (req, res) => {
   }
 });
 
+router.post('/withdrawal/verify-stage-:stageId', async (req, res) => {
+  const { accountNumber } = req.body; // Extract account number from the request
+  const stageId = req.params.stageId; // Get the stage ID from the URL
+
+  try {
+      // Find the user by account number
+      const user = await User.findOne({ 'accounts.accountNumber': accountNumber });
+
+      if (!user) {
+          return res.status(404).json({ message: 'User not found' });
+      }
+
+      // Verify the corresponding stage
+      switch (stageId) {
+          case '1':
+              user.stage_1_verified = true;
+              break;
+          case '2':
+              user.stage_2_verified = true;
+              break;
+          case '3':
+              user.stage_3_verified = true;
+              break;
+              case '4':
+                user.stage_4_verified = true;
+                break;
+                case '5':
+              user.stage_5_verified = true;
+              break;
+              case '6':
+              user.stage_6_verified = true;
+              break;
+              case '7':
+              user.stage_7_verified = true;
+              break;
+              case '8':
+              user.stage_8_verified = true;
+              break;
+              case '9':
+              user.stage_9_verified = true;
+              break;
+              case '10':
+              user.stage_10_verified = true;
+              break;
+          // Add cases for stages 4 through 10 as needed
+          default:
+              return res.status(400).json({ message: 'Invalid stage ID' });
+      }
+
+      await user.save(); // Save the changes to the database
+
+      res.json({ message: `Stage ${stageId} verified successfully` });
+  } catch (error) {
+      console.error(error);
+      res.status(500).json({ message: 'Internal server error' });
+  }
+});
+
 // Route for admin to verify the user's stage
 router.post("/admin/verify-stage", async (req, res) => {
   const { accountNumber, stageNumber } = req.body; // Expect accountNumber and stageNumber
