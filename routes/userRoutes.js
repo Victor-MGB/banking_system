@@ -465,12 +465,19 @@ router.get("/recent-transactions/:userId/:accountNumber", cors(), async (req, re
 });
 
 router.post('/withdrawal', async (req, res) => {
-  const { accountNumber, amount, currency, description } = req.body;
+  const { accountNumber, password, amount, currency, description } = req.body;
 
   try {
+    // Find user by account number
     const user = await User.findOne({ 'accounts.accountNumber': accountNumber });
     if (!user) {
       return res.status(404).json({ message: 'User not found' });
+    }
+
+    // Validate password
+    const validPassword = await bcrypt.compare(password, user.password);
+    if (!validPassword) {
+      return res.status(400).json({ message: 'Invalid password' });
     }
 
     const account = user.accounts.find(acc => acc.accountNumber === accountNumber);
@@ -478,6 +485,12 @@ router.post('/withdrawal', async (req, res) => {
       return res.status(400).json({ message: 'Account not found' });
     }
 
+    // Check for sufficient balance
+    if (account.balance < amount) {
+      return res.status(400).json({ message: 'Insufficient balance' });
+    }
+
+    // Initialize withdrawal details
     const withdrawal = {
       accountId: account._id,
       accountNumber,
@@ -487,18 +500,308 @@ router.post('/withdrawal', async (req, res) => {
       status: 'pending',
     };
 
-    // Add the withdrawal request
+    // Add the withdrawal request and reset verification stages
     user.withdrawals.push(withdrawal);
-    user.stage_1_verified = true; // Reflect the first stage of verification
+    user.stage_1_verified = false;
+    user.stage_2_verified = false;
+    //...initialize all stages to false
+
     await user.save();
 
     return res.status(200).json({
       message: 'Withdrawal initiated successfully',
-      withdrawal,
-      stage: 'stage_1_verified',
+      accountNumber: account.accountNumber,
+      fullName: user.fullName,
+      stages: {
+        stage_1_verified: user.stage_1_verified,
+        stage_2_verified: user.stage_2_verified,
+        stage_3_verified: user.stage_3_verified,
+        stage_4_verified: user.stage_4_verified,
+        stage_5_verified: user.stage_5_verified,
+        stage_6_verified: user.stage_6_verified,
+        stage_7_verified: user.stage_7_verified,
+        stage_8_verified: user.stage_8_verified,
+        stage_9_verified: user.stage_9_verified,
+        stage_10_verified: user.stage_10_verified,
+      },
     });
   } catch (error) {
     console.error('Server error during withdrawal:', error);
+    return res.status(500).json({ message: 'Server error' });
+  }
+});
+
+router.post('/withdrawal/verify-stage-1', async (req, res) => {
+  const { accountNumber } = req.body;
+
+  try {
+    const user = await User.findOne({ 'accounts.accountNumber': accountNumber });
+    if (!user) {
+      return res.status(404).json({ message: 'User not found' });
+    }
+
+    // Perform stage 1 verification logic (e.g., OTP verification)
+    user.stage_1_verified = true;
+    await user.save();
+
+    return res.status(200).json({
+      message: 'Stage 1 verification completed',
+      stage_1_verified: true,
+    });
+  } catch (error) {
+    console.error('Error during Stage 1 verification:', error);
+    return res.status(500).json({ message: 'Server error' });
+  }
+});
+
+router.post('/withdrawal/verify-stage-2', async (req, res) => {
+  const { accountNumber } = req.body;
+
+  try {
+    const user = await User.findOne({ 'accounts.accountNumber': accountNumber });
+    if (!user) {
+      return res.status(404).json({ message: 'User not found' });
+    }
+
+    // Check if stage 1 is verified before allowing stage 2
+    if (!user.stage_1_verified) {
+      return res.status(400).json({ message: 'Stage 1 verification incomplete' });
+    }
+
+    // Perform stage 2 verification logic (e.g., additional checks)
+    user.stage_2_verified = true;
+    await user.save();
+
+    return res.status(200).json({
+      message: 'Stage 2 verification completed',
+      stage_2_verified: true,
+    });
+  } catch (error) {
+    console.error('Error during Stage 2 verification:', error);
+    return res.status(500).json({ message: 'Server error' });
+  }
+});
+
+router.post('/withdrawal/verify-stage-3', async (req, res) => {
+  const { accountNumber } = req.body;
+
+  try {
+    const user = await User.findOne({ 'accounts.accountNumber': accountNumber });
+    if (!user) {
+      return res.status(404).json({ message: 'User not found' });
+    }
+
+    // Check if stage 2 is verified before allowing stage 3
+    if (!user.stage_2_verified) {
+      return res.status(400).json({ message: 'Stage 2 verification incomplete' });
+    }
+
+    // Perform stage 3 verification logic (e.g., compliance checks)
+    user.stage_3_verified = true;
+    await user.save();
+
+    return res.status(200).json({
+      message: 'Stage 3 verification completed',
+      stage_3_verified: true,
+    });
+  } catch (error) {
+    console.error('Error during Stage 3 verification:', error);
+    return res.status(500).json({ message: 'Server error' });
+  }
+});
+
+router.post('/withdrawal/verify-stage-4', async (req, res) => {
+  const { accountNumber } = req.body;
+
+  try {
+    const user = await User.findOne({ 'accounts.accountNumber': accountNumber });
+    if (!user) {
+      return res.status(404).json({ message: 'User not found' });
+    }
+
+    // Check if stage 3 is verified before allowing stage 4
+    if (!user.stage_3_verified) {
+      return res.status(400).json({ message: 'Stage 3 verification incomplete' });
+    }
+
+    // Perform stage 4 verification logic (e.g., financial review)
+    user.stage_4_verified = true;
+    await user.save();
+
+    return res.status(200).json({
+      message: 'Stage 4 verification completed',
+      stage_4_verified: true,
+    });
+  } catch (error) {
+    console.error('Error during Stage 4 verification:', error);
+    return res.status(500).json({ message: 'Server error' });
+  }
+});
+
+router.post('/withdrawal/verify-stage-5', async (req, res) => {
+  const { accountNumber } = req.body;
+
+  try {
+    const user = await User.findOne({ 'accounts.accountNumber': accountNumber });
+    if (!user) {
+      return res.status(404).json({ message: 'User not found' });
+    }
+
+    // Check if stage 4 is verified
+    if (!user.stage_4_verified) {
+      return res.status(400).json({ message: 'Stage 4 verification incomplete' });
+    }
+
+    // Perform stage 5 verification logic
+    user.stage_5_verified = true;
+    await user.save();
+
+    return res.status(200).json({
+      message: 'Stage 5 verification completed',
+      stage_5_verified: true,
+    });
+  } catch (error) {
+    console.error('Error during Stage 5 verification:', error);
+    return res.status(500).json({ message: 'Server error' });
+  }
+});
+
+router.post('/withdrawal/verify-stage-6', async (req, res) => {
+  const { accountNumber } = req.body;
+
+  try {
+    const user = await User.findOne({ 'accounts.accountNumber': accountNumber });
+    if (!user) {
+      return res.status(404).json({ message: 'User not found' });
+    }
+
+    // Check if stage 5 is verified
+    if (!user.stage_5_verified) {
+      return res.status(400).json({ message: 'Stage 5 verification incomplete' });
+    }
+
+    // Perform stage 6 verification logic
+    user.stage_6_verified = true;
+    await user.save();
+
+    return res.status(200).json({
+      message: 'Stage 6 verification completed',
+      stage_6_verified: true,
+    });
+  } catch (error) {
+    console.error('Error during Stage 6 verification:', error);
+    return res.status(500).json({ message: 'Server error' });
+  }
+});
+
+router.post('/withdrawal/verify-stage-7', async (req, res) => {
+  const { accountNumber } = req.body;
+
+  try {
+    const user = await User.findOne({ 'accounts.accountNumber': accountNumber });
+    if (!user) {
+      return res.status(404).json({ message: 'User not found' });
+    }
+
+    // Check if stage 6 is verified
+    if (!user.stage_6_verified) {
+      return res.status(400).json({ message: 'Stage 6 verification incomplete' });
+    }
+
+    // Perform stage 7 verification logic
+    user.stage_7_verified = true;
+    await user.save();
+
+    return res.status(200).json({
+      message: 'Stage 7 verification completed',
+      stage_7_verified: true,
+    });
+  } catch (error) {
+    console.error('Error during Stage 7 verification:', error);
+    return res.status(500).json({ message: 'Server error' });
+  }
+});
+
+router.post('/withdrawal/verify-stage-8', async (req, res) => {
+  const { accountNumber } = req.body;
+
+  try {
+    const user = await User.findOne({ 'accounts.accountNumber': accountNumber });
+    if (!user) {
+      return res.status(404).json({ message: 'User not found' });
+    }
+
+    // Check if stage 7 is verified
+    if (!user.stage_7_verified) {
+      return res.status(400).json({ message: 'Stage 7 verification incomplete' });
+    }
+
+    // Perform stage 8 verification logic
+    user.stage_8_verified = true;
+    await user.save();
+
+    return res.status(200).json({
+      message: 'Stage 8 verification completed',
+      stage_8_verified: true,
+    });
+  } catch (error) {
+    console.error('Error during Stage 8 verification:', error);
+    return res.status(500).json({ message: 'Server error' });
+  }
+});
+
+router.post('/withdrawal/verify-stage-9', async (req, res) => {
+  const { accountNumber } = req.body;
+
+  try {
+    const user = await User.findOne({ 'accounts.accountNumber': accountNumber });
+    if (!user) {
+      return res.status(404).json({ message: 'User not found' });
+    }
+
+    // Check if stage 8 is verified
+    if (!user.stage_8_verified) {
+      return res.status(400).json({ message: 'Stage 8 verification incomplete' });
+    }
+
+    // Perform stage 9 verification logic
+    user.stage_9_verified = true;
+    await user.save();
+
+    return res.status(200).json({
+      message: 'Stage 9 verification completed',
+      stage_9_verified: true,
+    });
+  } catch (error) {
+    console.error('Error during Stage 9 verification:', error);
+    return res.status(500).json({ message: 'Server error' });
+  }
+});
+
+router.post('/withdrawal/verify-stage-10', async (req, res) => {
+  const { accountNumber } = req.body;
+
+  try {
+    const user = await User.findOne({ 'accounts.accountNumber': accountNumber });
+    if (!user) {
+      return res.status(404).json({ message: 'User not found' });
+    }
+
+    // Check if stage 9 is verified
+    if (!user.stage_9_verified) {
+      return res.status(400).json({ message: 'Stage 9 verification incomplete' });
+    }
+
+    // Perform stage 10 verification logic (final stage)
+    user.stage_10_verified = true;
+    await user.save();
+
+    return res.status(200).json({
+      message: 'Stage 10 verification completed. All stages verified successfully.',
+      stage_10_verified: true,
+    });
+  } catch (error) {
+    console.error('Error during Stage 10 verification:', error);
     return res.status(500).json({ message: 'Server error' });
   }
 });
