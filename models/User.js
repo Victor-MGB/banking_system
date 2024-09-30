@@ -39,7 +39,20 @@ const withdrawalSchema = new mongoose.Schema({
     default: "pending",
   },
   description: { type: String },
+
+  // Stages for withdrawal process
+  stages: [
+    {
+      stageNumber: { type: Number, required: true }, // 1, 2, 3...
+      stageName: { type: String, required: true }, // E.g., "Document Verification", "Account Balance Check"
+      verified: { type: Boolean, default: false },
+      verifiedByAdmin: { type: mongoose.Types.ObjectId, ref: "Admin" }, // Admin who verified
+      verifiedAt: { type: Date },
+      remarks: { type: String }, // Admin remarks or feedback
+    },
+  ],
 });
+
 
 
 // Loan Schema

@@ -4,6 +4,7 @@ const express = require('express');
 const cors = require('cors');
 const bodyParser = require('body-parser');
 const AdminRoutes = require("./routes/AdminRoutes")
+const newsletterRoutes = require('./routes/newsletterRoutes');
 
 // Import routes
 const userRoutes = require('./routes/userRoutes'); // Assuming you have a userRoutes file
@@ -29,6 +30,8 @@ app.get("/", (req, res) => {
 // User routes for registration, login, and OTP verification
 app.use("/api/users", userRoutes);
 app.use('/admin', AdminRoutes);
+app.use('/newsletter', newsletterRoutes);
+
 
 // Error handling for unknown routes
 app.use((req, res, next) => {
