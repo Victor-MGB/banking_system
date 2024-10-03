@@ -480,38 +480,50 @@ router.post('/withdrawal', async (req, res) => {
       return res.status(400).json({ message: 'Invalid password' });
     }
 
+    // Find the user's account by account number
     const account = user.accounts.find(acc => acc.accountNumber === accountNumber);
     if (!account) {
       return res.status(400).json({ message: 'Account not found' });
     }
 
-    // Check for sufficient balance
+    // Check if the account has enough balance
     if (account.balance < amount) {
       return res.status(400).json({ message: 'Insufficient balance' });
     }
 
-    // Initialize withdrawal details
+    // Prepare the withdrawal object
     const withdrawal = {
       accountId: account._id,
       accountNumber,
       amount,
       currency,
       description,
-      status: 'pending',
+      status: 'pending', // Set the initial status of the withdrawal to 'pending'
     };
 
     // Add the withdrawal request and reset verification stages
     user.withdrawals.push(withdrawal);
     user.stage_1_verified = false;
     user.stage_2_verified = false;
-    //...initialize all stages to false
+    user.stage_3_verified = false;
+    user.stage_4_verified = false;
+    user.stage_5_verified = false;
+    user.stage_6_verified = false;
+    user.stage_7_verified = false;
+    user.stage_8_verified = false;
+    user.stage_9_verified = false;
+    user.stage_10_verified = false
+    // Initialize all stages to false (ensure they exist in the schema)
 
+    // Save the updated user document
     await user.save();
 
+    // Return the withdrawal response with all verification stages set to false
     return res.status(200).json({
       message: 'Withdrawal initiated successfully',
       accountNumber: account.accountNumber,
       fullName: user.fullName,
+      withdrawalStatus: withdrawal.status,
       stages: {
         stage_1_verified: user.stage_1_verified,
         stage_2_verified: user.stage_2_verified,
@@ -527,9 +539,13 @@ router.post('/withdrawal', async (req, res) => {
     });
   } catch (error) {
     console.error('Server error during withdrawal:', error);
+
+    // Always return JSON even in case of server errors
     return res.status(500).json({ message: 'Server error' });
   }
 });
+
+
 
 router.post('/withdrawal/verify-stage-1', async (req, res) => {
   const { accountNumber } = req.body;

@@ -5,6 +5,7 @@ const cors = require('cors');
 const bodyParser = require('body-parser');
 const AdminRoutes = require("./routes/AdminRoutes")
 const newsletterRoutes = require('./routes/newsletterRoutes');
+const contactRoute = require('./routes/contactRoute')
 
 // Import routes
 const userRoutes = require('./routes/userRoutes'); // Assuming you have a userRoutes file
@@ -31,7 +32,7 @@ app.get("/", (req, res) => {
 app.use("/api/users", userRoutes);
 app.use('/admin', AdminRoutes);
 app.use('/newsletter', newsletterRoutes);
-
+app.use('/contact', contactRoute)
 
 // Error handling for unknown routes
 app.use((req, res, next) => {
