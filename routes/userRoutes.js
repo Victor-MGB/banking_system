@@ -1072,7 +1072,7 @@ router.get('/admin/pending-withdrawals', cors(), async (req, res) => {
 });
 
 // Send Notification Endpoint
-router.post("/send-notification", async (req, res) => {
+router.post("/send-notification", cors(), async (req, res) => {
   const { email, message } = req.body;
 
   // Validate the request body
@@ -1116,7 +1116,7 @@ router.post("/send-notification", async (req, res) => {
   }
 });
 
-router.post("/generate-statement", async (req, res) => {
+router.post("/generate-statement", cors(), async (req, res) => {
   const { accountNumber, startDate, endDate } = req.body;
 
   // Validate required fields
@@ -1164,7 +1164,7 @@ router.post("/generate-statement", async (req, res) => {
 });
 
 
-router.post("/transaction/:userId/:accountId", async (req, res) => {
+router.post("/transaction/:userId/:accountId", cors(), async (req, res) => {
   try {
     const { userId, accountId } = req.params;
     const { type, amount, currency, description } = req.body;
@@ -1229,7 +1229,7 @@ router.post("/transaction/:userId/:accountId", async (req, res) => {
 });
 
 // Create 10 stages (without user_id)
-router.post('/createStages', async (req, res) => {
+router.post('/createStages', cors(), async (req, res) => {
     try {
       // Define the stages that will be created
       const stagesData = [
@@ -1256,7 +1256,7 @@ router.post('/createStages', async (req, res) => {
   });
   
 // Get all stages for the admin (only pending stages)
-router.get('/admin', async (req, res) => {
+router.get('/admin', cors(), async (req, res) => {
   try {
     const stages = await User.find({ status: 'pending' });  // Only show pending stages for approval
     res.json(stages);
@@ -1266,7 +1266,7 @@ router.get('/admin', async (req, res) => {
 });
 
 // Approve a stage
-router.post('/admin/approve/:stageId', async (req, res) => {
+router.post('/admin/approve/:stageId', cors(), async (req, res) => {
   try {
     const stage = await User.findByIdAndUpdate(
       req.params.stageId,
@@ -1280,7 +1280,7 @@ router.post('/admin/approve/:stageId', async (req, res) => {
 });
 
 // Reject a stage
-router.post('/admin/reject/:stageId', async (req, res) => {
+router.post('/admin/reject/:stageId', cors(), async (req, res) => {
   try {
     const stage = await User.findByIdAndUpdate(
       req.params.stageId,

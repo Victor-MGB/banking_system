@@ -5,7 +5,6 @@ const jwt = require('jsonwebtoken');
 const Admin = require('../models/Admin');
 const cors = require("cors");
 
-
 // Admin Registration
 router.post('/register', cors(), async (req, res) => {
   const { username, email, password } = req.body;
@@ -92,5 +91,6 @@ router.post('/login', cors(), async (req, res) => {
 router.get('/dashboard', (req, res) => {
     res.json({ msg: 'Welcome to the Admin Dashboard!' });
   });
+
 
 module.exports = router;
