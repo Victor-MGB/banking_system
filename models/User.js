@@ -1,6 +1,19 @@
 const mongoose = require("mongoose");
 const { Schema } = mongoose;
 
+// Stage Schema
+const stageSchema = new Schema({
+  name: { type: String, required: true },
+  description: { type: String },
+  status: {
+    type: String,
+    enum: ['pending', 'approved', 'rejected'],
+    default: 'pending',
+  },
+  created_at: { type: Date, default: Date.now },
+  updated_at: { type: Date, default: Date.now },
+});
+
 // Account Schema
 const accountSchema = new Schema({
   accountId: { type: mongoose.Types.ObjectId, required: true },
@@ -53,8 +66,6 @@ const withdrawalSchema = new mongoose.Schema({
   ],
 });
 
-
-
 // Loan Schema
 const loanSchema = new Schema({
   loanId: {
@@ -98,7 +109,7 @@ const loanRepaymentSchema = new Schema({
 
 // User Schema
 const userSchema = new Schema({
-  fullName:{type:String, required:true, unique:true},
+  fullName: { type: String, required: true, unique: true },
   email: { type: String, required: true, unique: true },
   password: { type: String, required: true },
   agree: { type: Boolean, default: true, required: true },
@@ -119,6 +130,7 @@ const userSchema = new Schema({
       read: { type: Boolean, default: false },
     },
   ],
+  stages: [stageSchema], // Add the stageSchema here
   dateOfAccountCreation: { type: Date, default: Date.now },
   resetPasswordToken: { type: String }, // Token for password reset
   resetPasswordExpires: { type: Date }, // Expiry date for the token
