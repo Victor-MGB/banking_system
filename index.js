@@ -6,6 +6,7 @@ const bodyParser = require('body-parser');
 const AdminRoutes = require("./routes/AdminRoutes")
 const newsletterRoutes = require('./routes/newsletterRoutes');
 const contactRoute = require('./routes/contactRoute')
+const stageRoutes = require('./routes/StageRoute');
 
 // Import routes
 const userRoutes = require('./routes/userRoutes'); // Assuming you have a userRoutes file
@@ -33,6 +34,10 @@ app.use("/api/users", userRoutes);
 app.use('/admin', AdminRoutes);
 app.use('/newsletter', newsletterRoutes);
 app.use('/contact', contactRoute)
+
+
+app.use('/api/stages', stageRoutes);
+
 
 // Error handling for unknown routes
 app.use((req, res, next) => {
