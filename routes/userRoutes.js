@@ -1228,28 +1228,7 @@ router.post("/transaction/:userId/:accountId", cors(), async (req, res) => {
   }
 });
 
-
-const authenticate = async (req, res, next) => {
-  const token = req.header('Authorization')?.replace('Bearer ', ''); // Extract token
-  if (!token) {
-    return res.status(401).send({ error: 'Authentication required' });
-  }
-
-  try {
-    const decoded = jwt.verify(token, process.env.JWT_SECRET); // verify the token
-    const user = await User.findOne({ _id: decoded._id }); // find user by decoded _id
-    if (!user) {
-      throw new Error('User not found');
-    }
-    req.user = user; // Attach user to the request object
-    next();
-  } catch (err) {
-    res.status(401).send({ error: 'Invalid authentication token' });
-  }
-};
-
-// Assuming you have a middleware to verify the JWT and attach the userId to req.user
-router.post("/createWithdrawal", authenticate, async (req, res) => {
+router.post("/createWithdrawal", async (req, res) => {
   try {
     const { accountNumber, amount, currency, description } = req.body;
 
@@ -1258,10 +1237,9 @@ router.post("/createWithdrawal", authenticate, async (req, res) => {
       return res.status(400).json({ error: "All fields are required." });
     }
 
-    const userId = req.user._id; // Get user ID from authentication
-
-    // Find the user by userId
-    const user = await User.findById(userId);
+    // Find the user by userId (assuming you have some way to identify the user)
+    // Here you can use any method to get the user, e.g., querying by accountNumber or any other identifier.
+    const user = await User.findOne({ "accounts.accountNumber": accountNumber });
     if (!user) {
       return res.status(404).json({ error: "User not found." });
     }
@@ -1315,6 +1293,7 @@ router.post("/createWithdrawal", authenticate, async (req, res) => {
     res.status(400).json({ error: err.message });
   }
 });
+
   
 // Get all stages for the admin (only pending stages)
 router.get('/admin', cors(), async (req, res) => {
