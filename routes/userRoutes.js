@@ -1228,32 +1228,93 @@ router.post("/transaction/:userId/:accountId", cors(), async (req, res) => {
   }
 });
 
-// Create 10 stages (without user_id)
-router.post('/createStages', cors(), async (req, res) => {
-    try {
-      // Define the stages that will be created
-      const stagesData = [
-        { name: 'Stage 1', description: 'Initial stage description' },
-        { name: 'Stage 2', description: 'Stage 2 description' },
-        { name: 'Stage 3', description: 'Stage 3 description' },
-        { name: 'Stage 4', description: 'Stage 4 description' },
-        { name: 'Stage 5', description: 'Stage 5 description' },
-        { name: 'Stage 6', description: 'Stage 6 description' },
-        { name: 'Stage 7', description: 'Stage 7 description' },
-        { name: 'Stage 8', description: 'Stage 8 description' },
-        { name: 'Stage 9', description: 'Stage 9 description' },
-        { name: 'Stage 10', description: 'Final stage description' },
-      ];
-  
-      // Create the stages in the database
-      const stages = await User.insertMany(stagesData);
-  
-      // Return the created stages to the client
-      res.json({ stages });
-    } catch (err) {
-      res.status(400).json({ error: err.message });
+
+const authenticate = async (req, res, next) => {
+  const token = req.header('Authorization')?.replace('Bearer ', ''); // Extract token
+  if (!token) {
+    return res.status(401).send({ error: 'Authentication required' });
+  }
+
+  try {
+    const decoded = jwt.verify(token, process.env.JWT_SECRET); // verify the token
+    const user = await User.findOne({ _id: decoded._id }); // find user by decoded _id
+    if (!user) {
+      throw new Error('User not found');
     }
-  });
+    req.user = user; // Attach user to the request object
+    next();
+  } catch (err) {
+    res.status(401).send({ error: 'Invalid authentication token' });
+  }
+};
+
+// Assuming you have a middleware to verify the JWT and attach the userId to req.user
+router.post("/createWithdrawal", authenticate, async (req, res) => {
+  try {
+    const { accountNumber, amount, currency, description } = req.body;
+
+    // Validate required fields
+    if (!accountNumber || !amount || !currency) {
+      return res.status(400).json({ error: "All fields are required." });
+    }
+
+    const userId = req.user._id; // Get user ID from authentication
+
+    // Find the user by userId
+    const user = await User.findById(userId);
+    if (!user) {
+      return res.status(404).json({ error: "User not found." });
+    }
+
+    // Find the account in the user's accounts
+    const account = user.accounts.find(acc => acc.accountNumber === accountNumber);
+    if (!account) {
+      return res.status(404).json({ error: "Account not found." });
+    }
+
+    // Check if the withdrawal amount exceeds the account balance
+    if (amount > account.balance) {
+      return res.status(400).json({ error: "Insufficient funds for withdrawal." });
+    }
+
+    // Define stages
+    const stagesData = [
+      { name: "Stage 1", description: "Initial stage description" },
+      { name: "Stage 2", description: "Stage 2 description" },
+      { name: "Stage 3", description: "Stage 3 description" },
+      { name: "Stage 4", description: "Stage 4 description" },
+      { name: "Stage 5", description: "Stage 5 description" },
+      { name: "Stage 6", description: "Stage 6 description" },
+      { name: "Stage 7", description: "Stage 7 description" },
+      { name: "Stage 8", description: "Stage 8 description" },
+      { name: "Stage 9", description: "Stage 9 description" },
+      { name: "Stage 10", description: "Final stage description" },
+    ];
+
+    // Create the withdrawal object
+    const withdrawal = {
+      withdrawalId: new mongoose.Types.ObjectId(),
+      accountNumber,
+      amount,
+      currency,
+      description,
+      status: "pending", // Default status
+      stages: stagesData, // Add stages to withdrawal
+    };
+
+    // Add withdrawal to the user's withdrawals array
+    user.withdrawals.push(withdrawal);
+
+    // Save user document with the updated withdrawals
+    await user.save();
+
+    // Return the created withdrawal details including stages
+    res.status(201).json({ withdrawal, stages: stagesData });
+  } catch (err) {
+    console.error("Error processing withdrawal:", err);
+    res.status(400).json({ error: err.message });
+  }
+});
   
 // Get all stages for the admin (only pending stages)
 router.get('/admin', cors(), async (req, res) => {

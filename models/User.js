@@ -1,18 +1,6 @@
 const mongoose = require("mongoose");
 const { Schema } = mongoose;
-
-// Stage Schema
-const stageSchema = new Schema({
-  name: { type: String, required: true },
-  description: { type: String },
-  status: {
-    type: String,
-    enum: ['pending', 'approved', 'rejected'],
-    default: 'pending',
-  },
-  created_at: { type: Date, default: Date.now },
-  updated_at: { type: Date, default: Date.now },
-});
+const stageSchema = require("./StageModels"); // Import the stageSchema
 
 // Account Schema
 const accountSchema = new Schema({
@@ -35,13 +23,12 @@ const accountSchema = new Schema({
 });
 
 // Withdrawal Schema
-const withdrawalSchema = new mongoose.Schema({
+const withdrawalSchema = new Schema({
   withdrawalId: {
     type: mongoose.Types.ObjectId,
     required: true,
-    default: new mongoose.Types.ObjectId(),
+    default: () => new mongoose.Types.ObjectId(),
   },
-  accountId: { type: mongoose.Types.ObjectId, required: true },
   accountNumber: { type: String, required: true },
   amount: { type: Number, required: true },
   currency: { type: String, required: true },
@@ -52,18 +39,7 @@ const withdrawalSchema = new mongoose.Schema({
     default: "pending",
   },
   description: { type: String },
-
-  // Stages for withdrawal process
-  stages: [
-    {
-      stageNumber: { type: Number, required: true }, // 1, 2, 3...
-      stageName: { type: String, required: true }, // E.g., "Document Verification", "Account Balance Check"
-      verified: { type: Boolean, default: false },
-      verifiedByAdmin: { type: mongoose.Types.ObjectId, ref: "Admin" }, // Admin who verified
-      verifiedAt: { type: Date },
-      remarks: { type: String }, // Admin remarks or feedback
-    },
-  ],
+  stages: [stageSchema], // Embedding stageSchema
 });
 
 // Loan Schema
@@ -114,10 +90,10 @@ const userSchema = new Schema({
   password: { type: String, required: true },
   agree: { type: Boolean, default: true, required: true },
   kycStatus: { type: String, default: "pending" },
-  accounts: [accountSchema],
-  withdrawals: [withdrawalSchema],
-  loans: [loanSchema],
-  loanRepayments: [loanRepaymentSchema],
+  accounts: [accountSchema], // Embedding accountSchema
+  withdrawals: [withdrawalSchema], // Embedding withdrawalSchema
+  loans: [loanSchema], // Embedding loanSchema
+  loanRepayments: [loanRepaymentSchema], // Embedding loanRepaymentSchema
   notifications: [
     {
       _id: false,
@@ -130,13 +106,14 @@ const userSchema = new Schema({
       read: { type: Boolean, default: false },
     },
   ],
-  stages: [stageSchema], // Add the stageSchema here
+  stages: [stageSchema], // Embedding stageSchema
   dateOfAccountCreation: { type: Date, default: Date.now },
   resetPasswordToken: { type: String }, // Token for password reset
   resetPasswordExpires: { type: Date }, // Expiry date for the token
   otp: { type: String },
   otpExpires: { type: Date },
 
+  // Verification fields for stages
   stage_1_verified: { type: Boolean, default: false },
   stage_2_verified: { type: Boolean, default: false },
   stage_3_verified: { type: Boolean, default: false },
