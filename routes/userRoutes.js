@@ -1230,9 +1230,6 @@ router.post("/transaction/:userId/:accountId", cors(), async (req, res) => {
 
 router.post("/createWithdrawal", async (req, res) => {
   try {
-    // Assuming user is authenticated and their ID is available from the session or JWT
-    const userId = req.user.id; // Modify this according to your authentication method
-
     // Define the stages with 'approved: false' by default
     const stagesData = [
       { name: "Stage 1", description: "Initial stage description", approved: false },
@@ -1247,32 +1244,14 @@ router.post("/createWithdrawal", async (req, res) => {
       { name: "Stage 10", description: "Final stage description", approved: false }
     ];
 
-    // Find the user by ID
-    const user = await User.findById(userId);
-    if (!user) {
-      return res.status(404).json({ message: "User not found" });
-    }
-
-    // Create a new withdrawal document and add the stages
-    const withdrawal = {
-      stages: stagesData, // Add predefined stages
-    };
-
-    // Push the withdrawal to the user's withdrawals array
-    user.withdrawals.push(withdrawal);
-
-    // Save the updated user document
-    await user.save();
-
-    // Return the created withdrawal with stages
-    res.status(201).json({ message: "Withdrawal created successfully", withdrawal });
+    // Return the stages as the response
+    res.status(201).json({ message: "Stages created successfully", stages: stagesData });
   } catch (err) {
-    console.error("Error processing withdrawal:", err);
+    console.error("Error creating stages:", err);
     res.status(400).json({ error: err.message });
   }
 });
 
-// Get user's pending stages
 // Get user's pending stages
 router.get('/user/:userId/pending-stages', async (req, res) => {
   try {
