@@ -1293,41 +1293,84 @@ router.post("/createWithdrawal", async (req, res) => {
     res.status(400).json({ error: err.message });
   }
 });
-  
-// Get all stages for the admin (only pending stages)
-router.get('/admin', cors(), async (req, res) => {
+
+// Endpoint for admin to get all pending withdrawals
+router.get("/admin/withdrawals", async (req, res) => {
   try {
-    const stages = await User.find({ status: 'pending' });  // Only show pending stages for approval
-    res.json(stages);
+    // Fetch all users and filter withdrawals that are pending
+    const users = await User.find({ "withdrawals.status": "pending" });
+
+    // Collect all pending withdrawals
+    const pendingWithdrawals = [];
+    users.forEach(user => {
+      user.withdrawals.forEach(withdrawal => {
+        if (withdrawal.status === "pending") {
+          pendingWithdrawals.push({
+            userId: user._id,
+            accountNumber: withdrawal.accountNumber,
+            amount: withdrawal.amount,
+            currency: withdrawal.currency,
+            description: withdrawal.description,
+            stages: withdrawal.stages,
+            withdrawalId: withdrawal.withdrawalId,
+          });
+        }
+      });
+    });
+
+    // Return the pending withdrawals to the admin
+    res.status(200).json({ pendingWithdrawals });
   } catch (err) {
+    console.error("Error fetching pending withdrawals:", err);
     res.status(400).json({ error: err.message });
   }
 });
 
-// Approve a stage
-router.post('/admin/approve/:stageId', cors(), async (req, res) => {
+// Endpoint for admin to approve or reject a stage in a withdrawal request
+router.post("/admin/approveWithdrawalStage", async (req, res) => {
   try {
-    const stage = await User.findByIdAndUpdate(
-      req.params.stageId,
-      { status: 'approved', updated_at: Date.now() },
-      { new: true }
-    );
-    res.json(stage);
-  } catch (err) {
-    res.status(400).json({ error: err.message });
-  }
-});
+    const { userId, withdrawalId, stageIndex, approved } = req.body;
 
-// Reject a stage
-router.post('/admin/reject/:stageId', cors(), async (req, res) => {
-  try {
-    const stage = await User.findByIdAndUpdate(
-      req.params.stageId,
-      { status: 'rejected', updated_at: Date.now() },
-      { new: true }
-    );
-    res.json(stage);
+    // Find the user by userId
+    const user = await User.findById(userId);
+    if (!user) {
+      return res.status(404).json({ error: "User not found." });
+    }
+
+    // Find the withdrawal in the user's withdrawals
+    const withdrawal = user.withdrawals.find(w => w.withdrawalId.toString() === withdrawalId);
+    if (!withdrawal) {
+      return res.status(404).json({ error: "Withdrawal not found." });
+    }
+
+    // Check if the stage index is valid
+    if (stageIndex < 0 || stageIndex >= withdrawal.stages.length) {
+      return res.status(400).json({ error: "Invalid stage index." });
+    }
+
+    // Update the stage based on admin approval or rejection
+    if (approved) {
+      withdrawal.stages[stageIndex].status = "approved";
+    } else {
+      withdrawal.stages[stageIndex].status = "rejected";
+      withdrawal.status = "rejected"; // If any stage is rejected, set the withdrawal status to rejected
+    }
+
+    // Check if all stages have been approved
+    const allStagesApproved = withdrawal.stages.every(stage => stage.status === "approved");
+    if (allStagesApproved) {
+      withdrawal.status = "approved";
+      // Here you can also add logic to transfer money if needed
+      account.balance -= withdrawal.amount; // Deduct amount from the user's account
+    }
+
+    // Save the updated user document
+    await user.save();
+
+    // Return the updated withdrawal details
+    res.status(200).json({ withdrawal });
   } catch (err) {
+    console.error("Error approving/rejecting withdrawal stage:", err);
     res.status(400).json({ error: err.message });
   }
 });
