@@ -1293,7 +1293,6 @@ router.post("/createWithdrawal", async (req, res) => {
     res.status(400).json({ error: err.message });
   }
 });
-
   
 // Get all stages for the admin (only pending stages)
 router.get('/admin', cors(), async (req, res) => {
