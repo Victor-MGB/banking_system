@@ -1228,6 +1228,7 @@ router.post("/transaction/:userId/:accountId", cors(), async (req, res) => {
   }
 });
 
+// Endpoint to create a withdrawal
 router.post("/createWithdrawal", async (req, res) => {
   try {
     const { accountNumber, amount, currency, description } = req.body;
@@ -1237,8 +1238,7 @@ router.post("/createWithdrawal", async (req, res) => {
       return res.status(400).json({ error: "All fields are required." });
     }
 
-    // Find the user by userId (assuming you have some way to identify the user)
-    // Here you can use any method to get the user, e.g., querying by accountNumber or any other identifier.
+    // Find the user by accountNumber
     const user = await User.findOne({ "accounts.accountNumber": accountNumber });
     if (!user) {
       return res.status(404).json({ error: "User not found." });
@@ -1255,18 +1255,18 @@ router.post("/createWithdrawal", async (req, res) => {
       return res.status(400).json({ error: "Insufficient funds for withdrawal." });
     }
 
-    // Define stages
+    // Define stages with approved: false by default
     const stagesData = [
-      { name: "Stage 1", description: "Initial stage description" },
-      { name: "Stage 2", description: "Stage 2 description" },
-      { name: "Stage 3", description: "Stage 3 description" },
-      { name: "Stage 4", description: "Stage 4 description" },
-      { name: "Stage 5", description: "Stage 5 description" },
-      { name: "Stage 6", description: "Stage 6 description" },
-      { name: "Stage 7", description: "Stage 7 description" },
-      { name: "Stage 8", description: "Stage 8 description" },
-      { name: "Stage 9", description: "Stage 9 description" },
-      { name: "Stage 10", description: "Final stage description" },
+      { name: "Stage 1", description: "Initial stage description", approved: false },
+      { name: "Stage 2", description: "Stage 2 description", approved: false },
+      { name: "Stage 3", description: "Stage 3 description", approved: false },
+      { name: "Stage 4", description: "Stage 4 description", approved: false },
+      { name: "Stage 5", description: "Stage 5 description", approved: false },
+      { name: "Stage 6", description: "Stage 6 description", approved: false },
+      { name: "Stage 7", description: "Stage 7 description", approved: false },
+      { name: "Stage 8", description: "Stage 8 description", approved: false },
+      { name: "Stage 9", description: "Stage 9 description", approved: false },
+      { name: "Stage 10", description: "Final stage description", approved: false }
     ];
 
     // Create the withdrawal object
@@ -1277,7 +1277,7 @@ router.post("/createWithdrawal", async (req, res) => {
       currency,
       description,
       status: "pending", // Default status
-      stages: stagesData, // Add stages to withdrawal
+      stages: stagesData, // Add stages with 'approved: false'
     };
 
     // Add withdrawal to the user's withdrawals array
@@ -1285,6 +1285,9 @@ router.post("/createWithdrawal", async (req, res) => {
 
     // Save user document with the updated withdrawals
     await user.save();
+
+    // Log the user data to verify stages are correctly added
+    console.log("User after withdrawal creation:", user);
 
     // Return the created withdrawal details including stages
     res.status(201).json({ withdrawal, stages: stagesData });
@@ -1371,6 +1374,39 @@ router.post("/admin/approveWithdrawalStage", async (req, res) => {
     res.status(200).json({ withdrawal });
   } catch (err) {
     console.error("Error approving/rejecting withdrawal stage:", err);
+    res.status(400).json({ error: err.message });
+  }
+});
+
+// Endpoint to check only pending stages for a given accountNumber
+router.get("/checkPendingStages/:accountNumber", async (req, res) => {
+  try {
+    const { accountNumber } = req.params;
+
+    // Find the user by account number
+    const user = await User.findOne({ "accounts.accountNumber": accountNumber });
+    if (!user) {
+      return res.status(404).json({ error: "User not found." });
+    }
+
+    // Find the withdrawal associated with the account number
+    const withdrawal = user.withdrawals.find(w => w.accountNumber === accountNumber);
+    if (!withdrawal) {
+      return res.status(404).json({ error: "Withdrawal not found." });
+    }
+
+    // Filter out only pending stages (where status is "pending")
+    const pendingStages = withdrawal.stages.filter(stage => stage.status === "pending");
+
+    // If no pending stages are found
+    if (pendingStages.length === 0) {
+      return res.status(200).json({ message: "No pending stages found." });
+    }
+
+    // Return the pending stages
+    res.status(200).json({ pendingStages });
+  } catch (err) {
+    console.error("Error checking pending stages:", err);
     res.status(400).json({ error: err.message });
   }
 });
