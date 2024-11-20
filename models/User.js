@@ -24,21 +24,6 @@ const accountSchema = new Schema({
 
 // Withdrawal Schema
 const withdrawalSchema = new Schema({
-  withdrawalId: {
-    type: mongoose.Types.ObjectId,
-    required: true,
-    default: () => new mongoose.Types.ObjectId(),
-  },
-  accountNumber: { type: String, required: true },
-  amount: { type: Number, required: true },
-  currency: { type: String, required: true },
-  date: { type: Date, default: Date.now },
-  status: {
-    type: String,
-    enum: ["pending", "completed", "failed"],
-    default: "pending",
-  },
-  description: { type: String },
   stages: [stageSchema], // Embedding stageSchema
 });
 
@@ -111,19 +96,7 @@ const userSchema = new Schema({
   resetPasswordToken: { type: String }, // Token for password reset
   resetPasswordExpires: { type: Date }, // Expiry date for the token
   otp: { type: String },
-  otpExpires: { type: Date },
-
-  // Verification fields for stages
-  stage_1_verified: { type: Boolean, default: false },
-  stage_2_verified: { type: Boolean, default: false },
-  stage_3_verified: { type: Boolean, default: false },
-  stage_4_verified: { type: Boolean, default: false },
-  stage_5_verified: { type: Boolean, default: false },
-  stage_6_verified: { type: Boolean, default: false },
-  stage_7_verified: { type: Boolean, default: false },
-  stage_8_verified: { type: Boolean, default: false },
-  stage_9_verified: { type: Boolean, default: false },
-  stage_10_verified: { type: Boolean, default: false },
+  otpExpires: { type: Date }
 });
 
 module.exports = mongoose.model("User", userSchema);
