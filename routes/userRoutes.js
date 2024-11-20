@@ -1228,11 +1228,12 @@ router.post("/transaction/:userId/:accountId", cors(), async (req, res) => {
   }
 });
 
-router.post("/createWithdrawal/:userId", async (req, res) => {
+router.post("/createWithdrawal", async (req, res) => {
   try {
-    const { userId } = req.params;  // Get userId from URL parameter
+    // Assuming user is authenticated and their ID is available from the session or JWT
+    const userId = req.user.id; // Modify this according to your authentication method
 
-    // Define the stages with 'approved: false' by default, including the 'name' field
+    // Define the stages with 'approved: false' by default
     const stagesData = [
       { name: "Stage 1", description: "Initial stage description", approved: false },
       { name: "Stage 2", description: "Stage 2 description", approved: false },
@@ -1262,9 +1263,6 @@ router.post("/createWithdrawal/:userId", async (req, res) => {
 
     // Save the updated user document
     await user.save();
-
-    // Log the created withdrawal for debugging
-    console.log("Created withdrawal with stages:", withdrawal);
 
     // Return the created withdrawal with stages
     res.status(201).json({ message: "Withdrawal created successfully", withdrawal });
