@@ -50,7 +50,7 @@ router.post("/register", cors(), async (req, res) => {
     await user.save();
 
    // Send OTP via email
-const subject = "Your One-Time Password (OTP) for Central City Bank Registration";
+const subject = "Your One-Time Password (OTP) for Sheritage Bank Registration";
 const html = `
   <html>
     <head>
@@ -126,7 +126,7 @@ const html = `
     <body>
       <div class="container">
         <div class="header">
-          <h1>Central City Bank</h1>
+          <h1>Shertage Bank</h1>
         </div>
         <div class="content">
           <p>Dear <strong>${fullName}</strong>,</p>
