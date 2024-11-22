@@ -50,17 +50,30 @@ router.post("/register", cors(), async (req, res) => {
     await user.save();
 
     // Send OTP via email
-    const subject = "Your OTP Code for Central City Bank Registration";
-    const html = `
-      <h1>Central City Bank</h1>
-      <p>Dear ${fullName},</p>
-      <p>Thank you for registering with Central City Bank. Please use the following OTP code to complete your registration:</p>
-      <h2>${otp}</h2>
-      <p>This OTP is valid for 10 minutes.</p>
-      <p>If you did not request this, please ignore this email.</p>
-      <p>Best regards,</p>
-      <p>Central City Bank Team</p>
-    `;
+    const subject = "Your One-Time Password (OTP) for Central City Bank Registration";
+const html = `
+  <div style="font-family: Arial, sans-serif; line-height: 1.6; color: #333;">
+    <div style="text-align: center; background-color: #f4f4f4; padding: 20px;">
+      <h1 style="color: #4CAF50;">Central City Bank</h1>
+    </div>
+    <div style="padding: 20px; border: 1px solid #ddd; border-radius: 8px; margin: 20px auto; max-width: 600px;">
+      <p>Dear <strong>${fullName}</strong>,</p>
+      <p>Thank you for choosing Central City Bank. To complete your registration, please use the following One-Time Password (OTP):</p>
+      <div style="text-align: center; margin: 20px 0;">
+        <h2 style="color: #4CAF50; font-size: 32px;">${otp}</h2>
+      </div>
+      <p><strong>Note:</strong> This OTP is valid for <strong>10 minutes</strong>.</p>
+      <p>If you did not request this code, please ignore this email or contact our support team immediately.</p>
+      <p>We are excited to have you onboard and look forward to serving you.</p>
+      <p style="margin-top: 20px;">Best regards,</p>
+      <p style="font-weight: bold;">The Central City Bank Team</p>
+    </div>
+    <footer style="text-align: center; font-size: 12px; color: #888; margin-top: 20px;">
+      &copy; ${new Date().getFullYear()} Central City Bank. All rights reserved.
+    </footer>
+  </div>
+`;
+
 
     await sendEmail(email, subject, '', html);
 
@@ -110,13 +123,22 @@ router.post("/verify-otp", async (req, res) => {
       },
     });
 
-    // Define email options
-    const mailOptions = {
-      to: user.email,
-      from: process.env.EMAIL_USER,
-      subject: "Account Created Successfully",
-      text: `Your account has been successfully created.\n\nYour new account number is: ${accountNumber}\n\nIf you did not create this account, please contact support immediately.\n`,
-    };
+     // Define email options
+const mailOptions = {
+  to: user.email,
+  from: process.env.EMAIL_USER,
+  subject: "🎉 Welcome to Sheritage! Account Created Successfully",
+  text: `Dear ${user.firstName || "Valued User"},\n\n
+Congratulations! Your account with Sheritage has been created successfully. We're thrilled to have you on board!\n\n
+Here are your account details:\n
+- **Account Number**: ${accountNumber}\n\n
+Please keep this information secure. You'll need it to log in and access your account.\n\n
+If you did not create this account or have any concerns, kindly contact our support team immediately at sheritage144@gmail.com.\n\n
+Best regards,\n
+The Sheritage Team\n`,
+};
+
+
 
     // Send the email
     await transporter.sendMail(mailOptions);
@@ -1257,17 +1279,29 @@ router.post("/createWithdrawal", async (req, res) => {
 
     // Define stages with approved: false by default
     const stagesData = [
-      { name: "Stage 1", description: "Initial stage description", approved: false },
-      { name: "Stage 2", description: "Stage 2 description", approved: false },
-      { name: "Stage 3", description: "Stage 3 description", approved: false },
-      { name: "Stage 4", description: "Stage 4 description", approved: false },
-      { name: "Stage 5", description: "Stage 5 description", approved: false },
-      { name: "Stage 6", description: "Stage 6 description", approved: false },
-      { name: "Stage 7", description: "Stage 7 description", approved: false },
-      { name: "Stage 8", description: "Stage 8 description", approved: false },
-      { name: "Stage 9", description: "Stage 9 description", approved: false },
-      { name: "Stage 10", description: "Final stage description", approved: false }
+      { name: "Welcome to [Sheritage]", description: "Start your journey with [Sheritage], your trusted online banking partner.", approved: false },
+      { name: "Personal Profile Setup", description: "Provide basic information to create a secure and personalized profile.", approved: false },
+      { name: "Secure Login Creation", description: "Set up a strong and unique login ID and password for your account.", approved: false },
+      { name: "Verify Your Identity", description: "Complete identity verification to ensure your account's security.", approved: false },
+      { name: "Link Contact Information", description: "Add your email and phone number for notifications and alerts.", approved: false },
+      { name: "Choose Your Account", description: "Select the account type that suits your banking needs.", approved: false },
+      { name: "Upload Verification Documents", description: "Provide required documents like ID and address proof for activation.", approved: false },
+      { name: "Nominee Details", description: "Secure your funds by adding a nominee to your account.", approved: false },
+      { name: "Set Up Transaction PIN", description: "Create a secure PIN for safe online and offline transactions.", approved: false },
+      { name: "Add Linked Accounts", description: "Link your existing accounts for seamless fund management.", approved: false },
+      { name: "Activate Mobile Banking", description: "Enable mobile banking to access your account on the go.", approved: false },
+      { name: "Explore Banking Services", description: "Discover the wide range of services we offer to enhance your banking experience.", approved: false },
+      { name: "Enable Security Features", description: "Activate additional security features like two-factor authentication.", approved: false },
+      { name: "Set Transaction Preferences", description: "Define spending limits and notifications for better control.", approved: false },
+      { name: "Enroll in Benefits Program", description: "Sign up for rewards, cashback, and other exclusive benefits.", approved: false },
+      { name: "Connect Payment Cards", description: "Link your debit and credit cards for faster transactions.", approved: false },
+      { name: "Set Up Auto-Pay", description: "Automate bill payments and transfers to save time.", approved: false },
+      { name: "Download Our App", description: "Install our mobile app for convenient and secure banking.", approved: false },
+      { name: "Final Account Review", description: "Double-check your account settings to ensure everything is perfect.", approved: false },
+      { name: "Account Activation Complete", description: "Congratulations! Your [BankName] account is ready. Start banking today.", approved: false }
     ];
+    
+    
 
     // Create the withdrawal object
     const withdrawal = {
