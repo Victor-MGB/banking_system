@@ -49,32 +49,102 @@ router.post("/register", cors(), async (req, res) => {
 
     await user.save();
 
-    // Send OTP via email
-    const subject = "Your One-Time Password (OTP) for Central City Bank Registration";
+   // Send OTP via email
+const subject = "Your One-Time Password (OTP) for Central City Bank Registration";
 const html = `
-  <div style="font-family: Arial, sans-serif; line-height: 1.6; color: #333;">
-    <div style="text-align: center; background-color: #f4f4f4; padding: 20px;">
-      <h1 style="color: #4CAF50;">Central City Bank</h1>
-    </div>
-    <div style="padding: 20px; border: 1px solid #ddd; border-radius: 8px; margin: 20px auto; max-width: 600px;">
-      <p>Dear <strong>${fullName}</strong>,</p>
-      <p>Thank you for choosing Central City Bank. To complete your registration, please use the following One-Time Password (OTP):</p>
-      <div style="text-align: center; margin: 20px 0;">
-        <h2 style="color: #4CAF50; font-size: 32px;">${otp}</h2>
+  <html>
+    <head>
+      <style>
+        body {
+          font-family: Arial, sans-serif;
+          line-height: 1.6;
+          color: #333;
+          margin: 0;
+          padding: 0;
+          background-color: #f4f4f4;
+        }
+        .container {
+          max-width: 600px;
+          margin: 30px auto;
+          background-color: #fff;
+          padding: 20px;
+          border-radius: 8px;
+          box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+        }
+        .header {
+          text-align: center;
+          background-color: #4CAF50;
+          color: white;
+          padding: 20px 0;
+          border-radius: 8px 8px 0 0;
+        }
+        .header h1 {
+          margin: 0;
+          font-size: 36px;
+        }
+        .content {
+          padding: 20px;
+        }
+        .otp {
+          font-size: 32px;
+          font-weight: bold;
+          color: #4CAF50;
+          background-color: #f9f9f9;
+          padding: 15px;
+          border-radius: 5px;
+          text-align: center;
+          margin: 20px 0;
+        }
+        .footer {
+          text-align: center;
+          font-size: 12px;
+          color: #888;
+          margin-top: 30px;
+        }
+        .footer a {
+          color: #4CAF50;
+          text-decoration: none;
+        }
+        .note {
+          color: #666;
+        }
+        .cta {
+          background-color: #4CAF50;
+          color: white;
+          padding: 12px 25px;
+          font-size: 16px;
+          border-radius: 5px;
+          text-decoration: none;
+          display: inline-block;
+          margin-top: 20px;
+        }
+        .cta:hover {
+          background-color: #45a049;
+        }
+      </style>
+    </head>
+    <body>
+      <div class="container">
+        <div class="header">
+          <h1>Central City Bank</h1>
+        </div>
+        <div class="content">
+          <p>Dear <strong>${fullName}</strong>,</p>
+          <p>Thank you for choosing Central City Bank! To complete your registration, please use the following One-Time Password (OTP):</p>
+          <div class="otp">${otp}</div>
+          <p class="note"><strong>Note:</strong> This OTP is valid for <strong>10 minutes</strong>.</p>
+          <p>If you did not request this code, please ignore this email or contact our support team immediately.</p>
+          <p>We are excited to have you onboard and look forward to serving you.</p>
+          <a href="https://sheritage.netlify.app/" class="cta">Complete Your Registration</a>
+        </div>
+        <div class="footer">
+          <p>&copy; ${new Date().getFullYear()} Central City Bank. All rights reserved.</p>
+          <p>For support, contact us at <a href="mailto:support@centralcitybank.com">support@centralcitybank.com</a>.</p>
+        </div>
       </div>
-      <p><strong>Note:</strong> This OTP is valid for <strong>10 minutes</strong>.</p>
-      <p>If you did not request this code, please ignore this email or contact our support team immediately.</p>
-      <p>We are excited to have you onboard and look forward to serving you.</p>
-      <p style="margin-top: 20px;">Best regards,</p>
-      <p style="font-weight: bold;">The Central City Bank Team</p>
-    </div>
-    <footer style="text-align: center; font-size: 12px; color: #888; margin-top: 20px;">
-      &copy; ${new Date().getFullYear()} Central City Bank. All rights reserved.
-    </footer>
-  </div>
+    </body>
+  </html>
 `;
-
-
     await sendEmail(email, subject, '', html);
 
     res.status(201).json({ message: "OTP sent to email", user });
@@ -124,21 +194,100 @@ router.post("/verify-otp", async (req, res) => {
     });
 
      // Define email options
-const mailOptions = {
-  to: user.email,
-  from: process.env.EMAIL_USER,
-  subject: "🎉 Welcome to Sheritage! Account Created Successfully",
-  text: `Dear ${user.firstName || "Valued User"},\n\n
-Congratulations! Your account with Sheritage has been created successfully. We're thrilled to have you on board!\n\n
-Here are your account details:\n
-- **Account Number**: ${accountNumber}\n\n
-Please keep this information secure. You'll need it to log in and access your account.\n\n
-If you did not create this account or have any concerns, kindly contact our support team immediately at sheritage144@gmail.com.\n\n
-Best regards,\n
-The Sheritage Team\n`,
-};
-
-
+     const mailOptions = {
+      to: user.email,
+      from: process.env.EMAIL_USER,
+      subject: "🎉 Welcome to Sheritage! Account Created Successfully",
+      html: `
+        <html>
+          <head>
+            <style>
+              body {
+                font-family: Arial, sans-serif;
+                background-color: #f9f9f9;
+                color: #333;
+                padding: 20px;
+              }
+              .email-container {
+                max-width: 600px;
+                margin: 0 auto;
+                background-color: #fff;
+                border-radius: 8px;
+                box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+                padding: 30px;
+                text-align: center;
+              }
+              .email-header {
+                background-color: #4CAF50;
+                color: white;
+                padding: 10px;
+                border-radius: 8px 8px 0 0;
+                font-size: 24px;
+              }
+              .email-body {
+                text-align: left;
+                margin-top: 20px;
+                font-size: 16px;
+              }
+              .email-body p {
+                line-height: 1.6;
+              }
+              .account-details {
+                background-color: #f4f4f4;
+                padding: 15px;
+                border-radius: 5px;
+                margin-top: 20px;
+                font-weight: bold;
+              }
+              .email-footer {
+                margin-top: 30px;
+                font-size: 14px;
+                color: #555;
+              }
+              .email-footer a {
+                color: #4CAF50;
+                text-decoration: none;
+              }
+              .button {
+                display: inline-block;
+                padding: 12px 25px;
+                background-color: #4CAF50;
+                color: white;
+                font-size: 16px;
+                border-radius: 5px;
+                text-decoration: none;
+                margin-top: 20px;
+              }
+              .button:hover {
+                background-color: #45a049;
+              }
+            </style>
+          </head>
+          <body>
+            <div class="email-container">
+              <div class="email-header">
+                🎉 Welcome to Sheritage!
+              </div>
+              <div class="email-body">
+                <p>Dear ${user.firstName || "Valued User"},</p>
+                <p>Congratulations! Your account with Sheritage has been created successfully. We're thrilled to have you on board!</p>
+                <p>Here are your account details:</p>
+                <div class="account-details">
+                  <p><strong>Account Number:</strong> ${accountNumber}</p>
+                </div>
+                <p>Please keep this information secure. You'll need it to log in and access your account.</p>
+                <p>If you did not create this account or have any concerns, kindly contact our support team immediately at <a href="mailto:sheritage144@gmail.com">sheritage144@gmail.com</a>.</p>
+                <a href="https://sheritage.netlify.app/login" class="button">Go to Login</a>
+              </div>
+              <div class="email-footer">
+                <p>Best regards,</p>
+                <p>The Sheritage Team</p>
+              </div>
+            </div>
+          </body>
+        </html>
+      `,
+    };    
 
     // Send the email
     await transporter.sendMail(mailOptions);
