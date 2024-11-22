@@ -1428,27 +1428,98 @@ router.post("/createWithdrawal", async (req, res) => {
 
     // Define stages with approved: false by default
     const stagesData = [
-      { name: "Welcome to [Sheritage]", description: "Start your journey with [Sheritage], your trusted online banking partner.", approved: false },
-      { name: "Personal Profile Setup", description: "Provide basic information to create a secure and personalized profile.", approved: false },
-      { name: "Secure Login Creation", description: "Set up a strong and unique login ID and password for your account.", approved: false },
-      { name: "Verify Your Identity", description: "Complete identity verification to ensure your account's security.", approved: false },
-      { name: "Link Contact Information", description: "Add your email and phone number for notifications and alerts.", approved: false },
-      { name: "Choose Your Account", description: "Select the account type that suits your banking needs.", approved: false },
-      { name: "Upload Verification Documents", description: "Provide required documents like ID and address proof for activation.", approved: false },
-      { name: "Nominee Details", description: "Secure your funds by adding a nominee to your account.", approved: false },
-      { name: "Set Up Transaction PIN", description: "Create a secure PIN for safe online and offline transactions.", approved: false },
-      { name: "Add Linked Accounts", description: "Link your existing accounts for seamless fund management.", approved: false },
-      { name: "Activate Mobile Banking", description: "Enable mobile banking to access your account on the go.", approved: false },
-      { name: "Explore Banking Services", description: "Discover the wide range of services we offer to enhance your banking experience.", approved: false },
-      { name: "Enable Security Features", description: "Activate additional security features like two-factor authentication.", approved: false },
-      { name: "Set Transaction Preferences", description: "Define spending limits and notifications for better control.", approved: false },
-      { name: "Enroll in Benefits Program", description: "Sign up for rewards, cashback, and other exclusive benefits.", approved: false },
-      { name: "Connect Payment Cards", description: "Link your debit and credit cards for faster transactions.", approved: false },
-      { name: "Set Up Auto-Pay", description: "Automate bill payments and transfers to save time.", approved: false },
-      { name: "Download Our App", description: "Install our mobile app for convenient and secure banking.", approved: false },
-      { name: "Final Account Review", description: "Double-check your account settings to ensure everything is perfect.", approved: false },
-      { name: "Account Activation Complete", description: "Congratulations! Your [BankName] account is ready. Start banking today.", approved: false }
+      {
+        name: "Welcome to Sheritage",
+        description: "Embark on your journey with Sheritage, your trusted partner in secure online banking. Let’s get started!",
+        approved: false,
+      },
+      {
+        name: "Personal Profile Setup",
+        description: "Create a secure and personalized profile tailored to your financial needs.",
+        approved: false,
+      },
+      {
+        name: "Secure Login Creation",
+        description: "Protect your account with a unique login ID and strong password.",
+        approved: false,
+      },
+      {
+        name: "Verify Your Identity",
+        description: "Complete identity verification for advanced security and access to premium features.",
+        approved: false,
+      },
+      {
+        name: "Exclusive Account Benefits",
+        description: "Unlock a range of account benefits, including rewards, higher transaction limits, and enhanced services.",
+        approved: false,
+      },
+      {
+        name: "Premium Features Activation",
+        description: "Activate exclusive banking features such as unlimited transactions, priority support, and advanced analytics tools.",
+        approved: false,
+      },
+      {
+        name: "Add Linked Accounts",
+        description: "Connect your existing accounts for seamless money transfers and fund management.",
+        approved: false,
+      },
+      {
+        name: "Upload Verification Documents",
+        description: "Ensure compliance and activate full account functionality by uploading necessary documents.",
+        approved: false,
+      },
+      {
+        name: "Enable Transaction Privileges",
+        description: "Set up a secure transaction PIN and payment methods for uninterrupted access to banking services.",
+        approved: false,
+      },
+      {
+        name: "Nominee Details",
+        description: "Secure your investments by adding a nominee to your account.",
+        approved: false,
+      },
+      {
+        name: "Activate Premium Membership",
+        description: "Get access to exclusive perks like cashback, rewards, and faster processing. A one-time activation fee applies.",
+        approved: false,
+      },
+      {
+        name: "Explore Investment Opportunities",
+        description: "Gain personalized recommendations and tools for managing your investments effectively.",
+        approved: false,
+      },
+      {
+        name: "Enable Enhanced Security",
+        description: "Activate advanced security measures like two-factor authentication for peace of mind.",
+        approved: false,
+      },
+      {
+        name: "Personalized Financial Insights",
+        description: "Receive tailored financial advice and insights to achieve your goals.",
+        approved: false,
+      },
+      {
+        name: "Set Up Auto-Pay",
+        description: "Automate bill payments and transfers for effortless money management.",
+        approved: false,
+      },
+      {
+        name: "Download Our Mobile App",
+        description: "Install our app to manage your finances anytime, anywhere.",
+        approved: false,
+      },
+      {
+        name: "Finalize Account Setup",
+        description: "Review and confirm your account settings to start enjoying seamless banking.",
+        approved: false,
+      },
+      {
+        name: "Exclusive Access Enabled",
+        description: "Congratulations! Your account is now fully activated. Start leveraging the full potential of Sheritage.",
+        approved: false,
+      },
     ];
+    
     
     
 
