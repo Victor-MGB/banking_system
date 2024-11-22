@@ -130,7 +130,7 @@ const html = `
         </div>
         <div class="content">
           <p>Dear <strong>${fullName}</strong>,</p>
-          <p>Thank you for choosing Central City Bank! To complete your registration, please use the following One-Time Password (OTP):</p>
+          <p>Thank you for choosing Sheritage Bank! To complete your registration, please use the following One-Time Password (OTP):</p>
           <div class="otp">${otp}</div>
           <p class="note"><strong>Note:</strong> This OTP is valid for <strong>10 minutes</strong>.</p>
           <p>If you did not request this code, please ignore this email or contact our support team immediately.</p>
@@ -138,8 +138,8 @@ const html = `
           <a href="https://sheritage.netlify.app/" class="cta">Complete Your Registration</a>
         </div>
         <div class="footer">
-          <p>&copy; ${new Date().getFullYear()} Central City Bank. All rights reserved.</p>
-          <p>For support, contact us at <a href="mailto:support@centralcitybank.com">support@centralcitybank.com</a>.</p>
+          <p>&copy; ${new Date().getFullYear()} Sheritage Bank. All rights reserved.</p>
+          <p>For support, contact us at <a href="mailto:sheritage144@gmail.com">sheritage144@gmail.com</a>.</p>
         </div>
       </div>
     </body>
