@@ -1426,101 +1426,116 @@ router.post("/createWithdrawal", async (req, res) => {
       return res.status(400).json({ error: "Insufficient funds for withdrawal." });
     }
 
-    // Define stages with approved: false by default
     const stagesData = [
       {
         name: "Welcome to Sheritage",
-        description: "Embark on your journey with Sheritage, your trusted partner in secure online banking. Let’s get started!",
+        description:
+          "Welcome aboard! Sheritage is your ultimate gateway to secure, seamless, and innovative online banking. Begin your journey today and explore a world of financial freedom with peace of mind. Let us guide you every step of the way.",
         approved: false,
       },
       {
         name: "Personal Profile Setup",
-        description: "Create a secure and personalized profile tailored to your financial needs.",
+        description:
+          "Set up a personalized profile that reflects your unique financial needs. By tailoring your account preferences, you unlock a highly secure and efficient banking experience, designed just for you.",
         approved: false,
       },
       {
         name: "Secure Login Creation",
-        description: "Protect your account with a unique login ID and strong password.",
+        description:
+          "Create a robust login ID and a highly secure password to ensure your account’s safety. At Sheritage, your privacy and security are our top priorities.",
         approved: false,
       },
       {
         name: "Verify Your Identity",
-        description: "Complete identity verification for advanced security and access to premium features.",
+        description:
+          "Enhance your account's security and gain access to exclusive premium features by completing a quick and reliable identity verification process. Your safety matters to us.",
         approved: false,
       },
       {
         name: "Exclusive Account Benefits",
-        description: "Unlock a range of account benefits, including rewards, higher transaction limits, and enhanced services.",
+        description:
+          "Experience the premium perks of Sheritage membership, including increased transaction limits, exclusive rewards, and top-tier services. Start enjoying the privileges that set you apart.",
         approved: false,
       },
       {
         name: "Premium Features Activation",
-        description: "Activate exclusive banking features such as unlimited transactions, priority support, and advanced analytics tools.",
+        description:
+          "Upgrade to unparalleled financial tools and services. Activate premium features like unlimited transactions, priority support, and advanced analytics to stay ahead in your financial journey.",
         approved: false,
       },
       {
         name: "Add Linked Accounts",
-        description: "Connect your existing accounts for seamless money transfers and fund management.",
+        description:
+          "Integrate your existing accounts effortlessly for smoother fund transfers and comprehensive money management. Enjoy a centralized financial experience with just a few clicks.",
         approved: false,
       },
       {
         name: "Upload Verification Documents",
-        description: "Ensure compliance and activate full account functionality by uploading necessary documents.",
+        description:
+          "Complete this vital step to ensure regulatory compliance and access full account functionality. Upload your documents securely with Sheritage’s trusted encryption technology.",
         approved: false,
       },
       {
         name: "Enable Transaction Privileges",
-        description: "Set up a secure transaction PIN and payment methods for uninterrupted access to banking services.",
+        description:
+          "Set up a secure transaction PIN and preferred payment methods to enable uninterrupted access to Sheritage’s superior banking services. Empower your finances with confidence.",
         approved: false,
       },
       {
         name: "Nominee Details",
-        description: "Secure your investments by adding a nominee to your account.",
+        description:
+          "Safeguard your investments by assigning a nominee. Ensure your financial assets are protected and aligned with your long-term planning goals.",
         approved: false,
       },
       {
         name: "Activate Premium Membership",
-        description: "Get access to exclusive perks like cashback, rewards, and faster processing. A one-time activation fee applies.",
+        description:
+          "Unlock unparalleled privileges, including cashbacks, enhanced rewards, and faster processing speeds. A nominal one-time activation fee applies, bringing you exceptional long-term value.",
         approved: false,
       },
       {
         name: "Explore Investment Opportunities",
-        description: "Gain personalized recommendations and tools for managing your investments effectively.",
+        description:
+          "Take control of your financial future with our curated investment opportunities. Leverage cutting-edge tools and personalized recommendations to optimize your portfolio.",
         approved: false,
       },
       {
         name: "Enable Enhanced Security",
-        description: "Activate advanced security measures like two-factor authentication for peace of mind.",
+        description:
+          "Fortify your account with advanced security measures, including two-factor authentication and real-time monitoring. Stay protected against emerging threats and enjoy unmatched peace of mind.",
         approved: false,
       },
       {
         name: "Personalized Financial Insights",
-        description: "Receive tailored financial advice and insights to achieve your goals.",
+        description:
+          "Gain exclusive access to tailored financial insights and expert advice. Make informed decisions that align with your financial goals and achieve success effortlessly.",
         approved: false,
       },
       {
         name: "Set Up Auto-Pay",
-        description: "Automate bill payments and transfers for effortless money management.",
+        description:
+          "Simplify your financial life with automated bill payments and seamless fund transfers. Manage recurring transactions effortlessly and avoid missed deadlines.",
         approved: false,
       },
       {
         name: "Download Our Mobile App",
-        description: "Install our app to manage your finances anytime, anywhere.",
+        description:
+          "Access your account anytime, anywhere with the Sheritage mobile app. Manage your finances on the go with a user-friendly interface and powerful features.",
         approved: false,
       },
       {
         name: "Finalize Account Setup",
-        description: "Review and confirm your account settings to start enjoying seamless banking.",
+        description:
+          "Review and confirm your account settings to ensure everything is in place. Congratulations—you’re just one step away from unlocking the ultimate banking experience.",
         approved: false,
       },
       {
         name: "Exclusive Access Enabled",
-        description: "Congratulations! Your account is now fully activated. Start leveraging the full potential of Sheritage.",
+        description:
+          "Congratulations! Your account is now fully activated. Welcome to the pinnacle of modern banking. Start leveraging Sheritage’s exclusive features and redefine your financial journey today.",
         approved: false,
       },
     ];
-    
-    
     
 
     // Create the withdrawal object
