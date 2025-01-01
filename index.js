@@ -30,7 +30,7 @@ app.get("/", (req, res) => {
 });
 
 // User routes for registration, login, and OTP verification
-app.use("/api/users", userRoutes);
+app.use("/api", userRoutes);
 // app.use('/admin', AdminRoutes);
 // app.use('/newsletter', newsletterRoutes);
 // app.use('/contact', contactRoute)

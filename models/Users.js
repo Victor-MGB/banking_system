@@ -75,7 +75,14 @@ const userSchema = new mongoose.Schema({
   stage_12: { type: Boolean, default: false },
   stage_13: { type: Boolean, default: false },
   stage_14: { type: Boolean, default: false },
-  stage_15: { type: Boolean, default: false }
+  stage_15: { type: Boolean, default: false },
+
+  role: {
+    type: String,
+    enum: ["user", "admin"], // Define possible roles
+    default: "user", // Set default role as 'user'
+    required: true,
+  },
 });
 
 module.exports = mongoose.model("User", userSchema);

@@ -172,7 +172,7 @@ router.post("/register", async (req, res) => {
     </head>
     <body>
       <div class="container">
-        <h1>Welcome to Central Nation Bank!</h1>
+        <h1>Welcome to Sheritage Bank!</h1>
         <p>Dear <strong>${firstName}</strong>,</p>
         <p>We are thrilled to have you on board. To complete your registration, please use the following OTP:</p>
         <div class="otp">${otp}</div>
@@ -199,7 +199,9 @@ router.post("/register", async (req, res) => {
           middleName,
           lastName,
           email,
+          role: user.role, // Include the role here
           phoneNumber,
+          otp,
           gender,
           dateOfBirth,
           accountType,
