@@ -3,10 +3,10 @@ require('dotenv').config(); // Load environment variables from .env
 const express = require('express');
 const cors = require('cors');
 const bodyParser = require('body-parser');
-const AdminRoutes = require("./routes/AdminRoutes")
-const newsletterRoutes = require('./routes/newsletterRoutes');
-const contactRoute = require('./routes/contactRoute')
-const stageRoutes = require('./routes/StageRoute');
+// const AdminRoutes = require("./routes/AdminRoutes")
+// const newsletterRoutes = require('./routes/newsletterRoutes');
+// const contactRoute = require('./routes/contactRoute')
+// const stageRoutes = require('./routes/StageRoute');
 
 // Import routes
 const userRoutes = require('./routes/userRoutes'); // Assuming you have a userRoutes file
@@ -31,12 +31,12 @@ app.get("/", (req, res) => {
 
 // User routes for registration, login, and OTP verification
 app.use("/api/users", userRoutes);
-app.use('/admin', AdminRoutes);
-app.use('/newsletter', newsletterRoutes);
-app.use('/contact', contactRoute)
+// app.use('/admin', AdminRoutes);
+// app.use('/newsletter', newsletterRoutes);
+// app.use('/contact', contactRoute)
 
 
-app.use('/api/stages', stageRoutes);
+// app.use('/api/stages', stageRoutes);
 
 
 // Error handling for unknown routes

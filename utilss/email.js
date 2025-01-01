@@ -13,10 +13,12 @@ const transporter = nodemailer.createTransport({
 const sendEmail = (to, subject, text, html) => {
   return new Promise((resolve, reject) => {
     const mailOptions = {
-      from: {
-        name: "SheritageBank",
-        address: process.env.EMAIL_USER,
-      },
+      // from: {
+      //   name: "Centrallnationalbank",
+      //   address: process.env.EMAIL_USER,
+      // },
+      from: `"Central National Bank" <${process.env.EMAIL_USER}>`, // Display name masks the email
+
       to,
       subject,
       text,
